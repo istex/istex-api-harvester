@@ -23,7 +23,7 @@ Par exemple pour moissonner les 850 premiers documents du corpus "springer" il f
 istex-api-harvester --corpus springer --size 850
 ```
 
-Pour moissonner les 100 premiers documents correspondant à la requête "hypertex" tous corpus confondus :
+Pour moissonner les 100 documents les plus pertinants correspondant à la requête "hypertex" tous corpus confondus :
 ```bash
 istex-api-harvester --query hypertext --size 100
 ```
