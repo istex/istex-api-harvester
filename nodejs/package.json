@@ -1,7 +1,8 @@
 {
   "name": "istex-api-harvester",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Programme écrit en NodeJS permettant de moissonner les corpus proposés par l'API de la plateforme ISTEX.",
+  "preferGlobal": "true",
   "main": "istex-api-harvester.njs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -15,5 +16,11 @@
     "mkdirp": "~0.3.5",
     "async": "~0.2.9",
     "fs-extra": "^0.9.1"
+  },
+  "bin": {
+    "istex-api-harvester": "./istex-api-harvester.njs"
+  },
+  "engines": {
+    "node": ">= 0.10.x"
   }
 }
