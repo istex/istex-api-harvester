@@ -1,0 +1,19 @@
+{
+  "name": "istex-api-harvester",
+  "version": "1.0.1",
+  "description": "Programme écrit en NodeJS permettant de moissonner les corpus proposés par l'API de la plateforme ISTEX.",
+  "main": "istex-api-harvester.njs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Stéphane Gully <stephane.gully@gmail.com>",
+  "license": "BSD",
+  "dependencies": {
+    "superagent": "~0.15.2",
+    "commander": "~1.2.0",
+    "uuid": "~1.4.1",
+    "mkdirp": "~0.3.5",
+    "async": "~0.2.9",
+    "fs-extra": "^0.9.1"
+  }
+}
