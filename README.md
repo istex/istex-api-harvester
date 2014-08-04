@@ -18,12 +18,12 @@ npm install -g istex-api-harvester
 
 Par exemple pour moissonner les 850 premiers documents du corpus "springer" il faut taper ceci:
 ```bash
-./istex-api-harvester.njs --corpus springer --size 850
+istex-api-harvester --corpus springer --size 850
 ```
 
 Pour moissonner les 100 premiers documents correspondant à la requête "hypertex" tous corpus confondus :
 ```bash
-./istex-api-harvester.njs --query hypertext --size 100
+istex-api-harvester --query hypertext --size 100
 ```
 Les métadonnées au format MODS seront récupérées ainsi que le plein texte qui est la pluspart du temps au format pdf. Les données téléchargées sont stockées dans le répertoire "./springer/"
 Pour les deux premiers documents téléchargés, on aura par exemple les fichiers suivants qui seront créés :
