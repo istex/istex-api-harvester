@@ -6,8 +6,13 @@ Programmes permettant de moissonner les corpus proposés par l'API de la platefo
 
 Les prérequis pour l'utiliser sont :
 * Avoir nodejs d'installé sur sa machine (de préférence sur un OS de type Unix) -> http://nodejs.org/
-* D'installer les dépendances du script. Pour cela, se placer dans le répertoire où package.json est présent et taper : ``npm install``
 * Disposer d'un accès réseau et d'avoir une adresse ip autorisée par la plateforme ISTEX
+
+## Installation
+
+```bash
+npm install -g istex-api-harvester
+```
 
 ## Usage
 
