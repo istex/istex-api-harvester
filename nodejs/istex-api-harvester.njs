@@ -17,9 +17,9 @@ program
   .option('-v, --verbose',         "Affiche plus d'informations", false)
   .parse(process.argv);
 
-var dstPath = __dirname + '/' + program.corpus;
+var dstPath = process.cwd() + '/' + program.corpus;
 mkdirp.sync(dstPath);
-var zipName = dstPath + '/' + uuid.v1() + '.zip';
+var zipName = process.cwd() + '/' + uuid.v1() + '.zip';
 
 // découpe le téléchargement par pages
 // pour éviter de faire une énorme requête
