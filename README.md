@@ -18,12 +18,12 @@ npm install -g istex-api-harvester
 
 ## Usage
 
-Par exemple pour moissonner les 850 premiers documents du corpus "springer" il faut taper ceci:
+Par exemple pour moissonner les 850 premiers (ordre d'indexation) documents du corpus "springer" il faut taper ceci:
 ```bash
 istex-api-harvester --corpus springer --size 850
 ```
 
-Pour moissonner les 100 documents les plus pertinants correspondant à la requête "hypertex" tous corpus confondus :
+Pour moissonner les 100 documents les plus pertinants correspondant à la requête "hypertex" tout corpus confondus :
 ```bash
 istex-api-harvester --query hypertext --size 100
 ```
