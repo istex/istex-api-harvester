@@ -2,7 +2,7 @@
 
 Programmes permettant de moissonner les corpus proposés par l'API de la plateforme ISTEX.
 
-Plusieurs moissoneurs sont proposés dans différents languages de programmation :
+Plusieurs moissonneurs sont proposés dans différents langages de programmation :
 * [NodeJS](https://github.com/istex/istex-api-harvester/blob/master/nodejs/istex-api-harvester.njs)
 * [Bash](https://github.com/istex/istex-api-harvester/blob/master/bash/istex-api-harvester.sh) (vocation pédagogique)
 * ...
