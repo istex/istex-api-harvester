@@ -8,9 +8,9 @@
 #   apt-get install wcalc
 #
 
-PAGE_SIZE=12
+PAGE_SIZE=10
 ISTEX_QUERY="hypertext"
-ISTEX_URI="http://api.istex.fr/document/?q=$ISTEX_QUERY&size=$PAGE_SIZE"
+ISTEX_URI="https://api.istex.fr/document/?q=$ISTEX_QUERY&size=$PAGE_SIZE"
 
 # Librairie JQ pour manipuler le JSON
 JQ="jq -c -M -r"
@@ -29,7 +29,7 @@ do
 
   echo "--> Téléchargement de la page $PAGE_N/$TOTAL_PAGE"
   FROM=$(wcalc -q "$PAGE_N.0 * $PAGE_SIZE")
-  URL="http://api.istex.fr/document/?q=hypertext&size=$PAGE_SIZE&from=$FROM&output=fulltext,metadata"
+  URL="$ISTEX_URI&from=$FROM&output=fulltext,metadata"
   PAGE=$(curl -s $URL)
   NB_HITS=$(echo $PAGE | $JQ ".hits | length")
 
