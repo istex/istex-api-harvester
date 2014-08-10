@@ -12,7 +12,8 @@ PAGE_SIZE=10
 ISTEX_QUERY="hypertext"
 ISTEX_URI="https://api.istex.fr/document/?q=$ISTEX_QUERY&size=$PAGE_SIZE"
 
-# Librairie JQ pour manipuler le JSON
+# Outil JQ permettant de manipuler le JSON en ligne de commande
+# http://stedolan.github.io/jq/
 JQ="jq -c -M -r"
 
 # Récupération de la première page pour connaître le nombre de documents
