@@ -181,7 +181,7 @@ function checkIfAuthNeeded(cb) {
       if (err) {
         return cb(new Error(err));
       }
-      if (res.status == 401) {
+      if (res.status !== 200) {
         return cb(null, true);
       } else {
         return cb(null, false);
