@@ -214,6 +214,8 @@ function askLoginPassword(cb) {
       }
     }
   }, function (err, results) {
+    if (err) return cb(err);
+    
     // then try to auth
     program.username = results.username;
     program.password = results.password;
