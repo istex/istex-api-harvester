@@ -6,6 +6,7 @@ var uuid      = require('uuid');
 var fs        = require('fs');
 var mkdirp    = require('mkdirp');
 var async     = require('async');
+var prompt    = require('prompt');
 var package   = require('./package.json');
 
 program
@@ -14,6 +15,8 @@ program
   .option('-c, --corpus [corpus]', "Le corpus souhaité (ex: springer, ecco, ...)", 'istex')
   .option('-s, --size [size]',     "Quantité de documents à télécharger", 10)
   .option('-ft, --fulltext [0|1]', "Pour retourner ou pas le plein texte", 0)
+  .option('-u, --username [username]',        "Nom d'utilisateur ISTEX", '')
+  .option('-p, --password [password]',        "Mot de passe ISTEX", '')
   .option('-v, --verbose',         "Affiche plus d'informations", false)
   .parse(process.argv);
 
@@ -36,21 +39,40 @@ ranges.push([ nbPages * nbHitPerPage, nbLastPage ]);
 console.log("Téléchargement des " + program.size +
             " premiers documents (metadata & fulltext) ici : " + dstPath);
 
-// télécharge page par page
-var firstPage = true;
-async.mapLimit(ranges, 1, function (range, cb) {
-  downloadPage(range, cb, function (body) {
-    if (firstPage) {
-      console.log("Nombre de documents dans le corpus " + program.corpus + " : " + body.total);
-      firstPage = false;
-    }
-    console.log('Téléchargement de la page ' +
-                (range[0] / nbHitPerPage +1 ) + ' (' + (range[0] + range[1]) + ' documents)');
-  });
-}, function (err) {
-  if (err) return console.log(err);
-  console.log('Téléchargements terminés');
+/**
+ * Point d'entrée
+ * - vérifie si authentification nécessaire
+ * - demande le login/password si nécessaire
+ * - lance le téléchargement
+ */
+checkIfAuthNeeded(function (err, needAuth) {
+  if (err) return console.error(err);
+  if (needAuth) {
+    askLoginPassword(downloadPages);
+  } else {
+    downloadPages();
+  }
 });
+
+/**
+ * Fonction de téléchargement page par page
+ */
+function downloadPages() {
+  var firstPage = true;
+  async.mapLimit(ranges, 1, function (range, cb) {
+    downloadPage(range, cb, function (body) {
+      if (firstPage) {
+        console.log("Nombre de documents dans le corpus " + program.corpus + " : " + body.total);
+        firstPage = false;
+      }
+      console.log('Téléchargement de la page ' +
+                  (range[0] / nbHitPerPage +1 ) + ' (' + (range[0] + range[1]) + ' documents)');
+    });
+  }, function (err) {
+    if (err) return console.error(err);
+    console.log('Téléchargements terminés');
+  });
+}
 
 //
 // Fonction de téléchargement d'une page
@@ -68,6 +90,7 @@ function downloadPage(range, cb, cbBody) {
   var agent = request.agent();
   agent
   .get(url)
+  .auth(program.username, program.password)
   .end(function (err, res) {
     if (err) {
       return cb(new Error(err));
@@ -139,5 +162,77 @@ function downloadPage(range, cb, cbBody) {
       cb(err, res.body);
     });
 
+  });
+}
+
+
+
+/**
+ * Tentative de connexion à l'API pour vérifier si
+ * on a besoin d'indiquer des identifiants de connexion
+ */
+function checkIfAuthNeeded(cb) {
+  var url = 'https://api.istex.fr/corpus/';
+  var agent = request.agent();
+  agent
+    .get(url)
+    .auth(program.username, program.password)
+    .end(function (err, res) {
+      if (err) {
+        return cb(new Error(err));
+      }
+      if (res.status == 401) {
+        return cb(null, true);
+      } else {
+        return cb(null, false);
+      }
+    });
+}
+
+/**
+ * Demande à l'utilisateur ses identifiants
+ * et test si ils fonctionnent.
+ */
+function askLoginPassword(cb) {
+  // affiche un prompt pour demander si nécessaire à l'utilisateur 
+  // d'entrer un login et mot de passe ISTEX
+  prompt.message   = '';
+  prompt.delimiter = '';
+  prompt.start();
+  prompt.get({
+    properties: {
+      username: {
+        description: "Nom d'utilisateur ISTEX :",
+        default: program.username,
+        required: true
+      },
+      password: {
+        description: "Mot de passe ISTEX :",
+        default: program.password,
+        hidden: true,
+        required: true
+      }
+    }
+  }, function (err, results) {
+    // then try to auth
+    program.username = results.username;
+    program.password = results.password;
+    var url = 'https://api.istex.fr/corpus/';
+    var agent = request.agent();
+    agent
+      .get(url)
+      .auth(program.username, program.password)
+      .end(function (err, res) {
+        if (err) {
+          return cb(new Error(err));
+        }
+        if (res.status !== 200) {
+          // souci d'authentification, on relance le prompt
+          console.log('[' + res.status + '] ' + res.text);
+          return askLoginPassword(cb);
+        } else {
+          return cb(null, { username: program.username, password: program.password });
+        }
+      });
   });
 }
