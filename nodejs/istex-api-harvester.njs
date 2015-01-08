@@ -14,7 +14,8 @@ program
   .option('-q, --query [requete]', "La requete (?q=) ", '*')
   .option('-c, --corpus [corpus]', "Le corpus souhaité (ex: springer, ecco, ...)", 'istex')
   .option('-s, --size [size]',     "Quantité de documents à télécharger", 10)
-  .option('-ft, --fulltext [0|1]', "Pour retourner ou pas le plein texte", 0)
+  .option('-md, --metadata [formats]', "Pour retourner seulement certain formats de metadata (ex: mods,xml)", "all")
+  .option('-ft, --fulltext [formats]', "Pour retourner seulement certain formats de plein text (ex: tei,pdf)", "")
   .option('-u, --username [username]',        "Nom d'utilisateur ISTEX", '')
   .option('-p, --password [password]',        "Mot de passe ISTEX", '')
   .option('-v, --verbose',         "Affiche plus d'informations", false)
@@ -23,6 +24,11 @@ program
 var dstPath = process.cwd() + '/' + program.corpus;
 mkdirp.sync(dstPath);
 var zipName = process.cwd() + '/' + uuid.v1() + '.zip';
+
+// les paramètres metadata et fulltext peuvent contenir
+// une liste de valeurs séparées par des virgules
+program.metadata = program.metadata.split(',');
+program.fulltext = program.fulltext.split(',');
 
 // découpe le téléchargement par pages
 // pour éviter de faire une énorme requête
@@ -79,7 +85,7 @@ function downloadPages() {
 //  
 function downloadPage(range, cb, cbBody) {
   var url = 'https://api.istex.fr/document/?q='+program.query+'&output=metadata'
-            + (program.fulltext != 0 ? ',fulltext' : '')
+            + (program.fulltext.length != 0 ? ',fulltext' : '')
             + ((program.corpus == 'istex') ? '' : ('&corpus=' + program.corpus))
             + '&from=' + range[0] + '&size=' + range[1];
   console.log(url);
@@ -104,58 +110,76 @@ function downloadPage(range, cb, cbBody) {
 
     // lancement des téléchargement de façon séquentielle
     async.mapLimit(res.body.hits, 1, function (item1, cb2) {
-      // extract the MODS from the returned JSON
-      var mods = { url: '', filename: item1.id + '.mods.xml' };
-      item1.metadata.forEach(function (item2) {
-        if (item2.type && item2.type == 'mods') {
-          mods.url = item2.uri;
-        }
-      });
-      if (program.fulltext) {
-        // extract the fulltext from the returned JSON
-        var fulltext = { url: '', filename: '' };
-        item1.fulltext.forEach(function (item2) {
-          if (item2.type) {
-            fulltext.url      = item2.uri;
-            fulltext.filename = item1.id + '.' + item2.type;
-          }
-        });
-      }
 
-      // download the document (MODS and fulltext)
-      async.series([
-        // download the MODS
-        function (callback) {
-          var stream = fs.createWriteStream(dstPath + '/' + mods.filename);
-          var req = request.get(mods.url).auth(program.username, program.password);
-          req.pipe(stream);
-          stream.on('finish', function () {
-            if (program.verbose) {
-              console.log(mods.url);
+      var downloadFn = [];
+
+      // récupération de la liste des opérations
+      // de téléchargement des métadonnées
+      item1.metadata.forEach(function (meta) {
+        
+        // ignore les medadonnées non souhaitées
+        if (program.metadata.indexOf(meta.type) !== -1 || program.metadata.indexOf('all') !== -1) {
+          // ajoute une opération de téléchargement
+          // pour chaque métadonnées souhaitées
+          downloadFn.push(function (callback) {
+            if (program.verbose) {            
+              console.log(meta);
             }
-            callback(null);
+            var stream = fs.createWriteStream(dstPath + '/'
+                          + item1.id + '.metadata.' 
+                          + (meta.original ? 'original.' : '')
+                          + (meta.mimetype.indexOf(meta.type) === -1 ? '.' + meta.type + '.' : '')
+                          + meta.mimetype.split('/').pop().replace('+', '.'));
+            var req = request.get(meta.uri).auth(program.username, program.password);
+            req.pipe(stream);
+            stream.on('finish', function () {
+              callback(null);
+            });
+            stream.on('error', callback);
           });
-          stream.on('error', callback);
-        },
-        // download the fulltext
-        function (callback) {
-          if (!program.fulltext) return callback(null);
-          var stream = fs.createWriteStream(dstPath + '/' + fulltext.filename);
-          var req = request.get(fulltext.url).auth(program.username, program.password);
-          req.pipe(stream);
-          stream.on('finish', function () {
-            if (program.verbose) {
-              console.log(fulltext.url);
+        }
+
+      });
+
+      // récupération de la liste des opérations
+      // de téléchargement des pleins textes
+      item1.fulltext.forEach(function (ft) {
+        
+        // ignore les medadonnées non souhaitées
+        if (program.fulltext.indexOf(ft.type) !== -1 || program.fulltext.indexOf('all') !== -1) {
+          // ajoute une opération de téléchargement
+          // pour chaque plein texte souhaités
+          downloadFn.push(function (callback) {
+            if (program.verbose) {            
+              console.log(ft);
             }
-            callback(null);
+            // cas particuliers pour les tiff qui sont en fait des zip
+            if (ft.mimetype == 'image/tiff') {
+              ft.mimetype = 'application/zip';
+            }
+            var stream = fs.createWriteStream(dstPath + '/'
+                          + item1.id + '.fulltext.' 
+                          + (ft.original ? 'original.' : '')
+                          + (ft.mimetype.indexOf(ft.type) === -1 ? ft.type + '.' : '')
+                          + ft.mimetype.split('/').pop().replace('+', '.'));
+            var req = request.get(ft.uri).auth(program.username, program.password);
+            req.pipe(stream);
+            stream.on('finish', function () {
+              callback(null);
+            });
+            stream.on('error', callback);
           });
-          stream.on('error', callback);
-        },
-      ], function (err) {
+        }
+
+      });
+
+      // download the metadata and the fulltext
+      async.series(downloadFn, function (err) {
         // MODS and fulltext downloaded
         process.stdout.write('.');
         cb2(err);
       });
+
     }, function (err) {
       console.log('');
       // page downloaded
