@@ -127,11 +127,11 @@ function downloadPage(range, cb, cbBody) {
         // download the MODS
         function (callback) {
           var stream = fs.createWriteStream(dstPath + '/' + mods.filename);
-          var req = request.get(mods.url.replace('https', 'http'));
+          var req = request.get(mods.url).auth(program.username, program.password);
           req.pipe(stream);
           stream.on('finish', function () {
             if (program.verbose) {
-              console.log(mods.filename);
+              console.log(mods.url);
             }
             callback(null);
           });
@@ -141,11 +141,11 @@ function downloadPage(range, cb, cbBody) {
         function (callback) {
           if (!program.fulltext) return callback(null);
           var stream = fs.createWriteStream(dstPath + '/' + fulltext.filename);
-          var req = request.get(fulltext.url.replace('https', 'http'));
+          var req = request.get(fulltext.url).auth(program.username, program.password);
           req.pipe(stream);
           stream.on('finish', function () {
             if (program.verbose) {
-              console.log(fulltext.filename);
+              console.log(fulltext.url);
             }
             callback(null);
           });
