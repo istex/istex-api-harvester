@@ -35,7 +35,7 @@ istex-api-harvester --query hypertext --size 100
 
 Pour moissonner également les pleins textes :
 ```bash
-istex-api-harvester --query hypertext --size 100 --fulltext 1
+istex-api-harvester --query hypertext --size 100 --fulltext all
 ```
 
 Les métadonnées au format MODS seront récupérées ainsi que le plein texte qui est la pluspart du temps au format pdf. Les données téléchargées sont stockées dans le répertoire "./springer/"
