@@ -118,7 +118,7 @@ function downloadPage(range, cb, cbBody) {
       item1.metadata.forEach(function (meta) {
         
         // ignore les medadonnées non souhaitées
-        if (program.metadata.indexOf(meta.type) !== -1 || program.metadata.indexOf('all') !== -1) {
+        if (program.metadata.indexOf(meta.extension) !== -1 || program.metadata.indexOf('all') !== -1) {
           // ajoute une opération de téléchargement
           // pour chaque métadonnées souhaitées
           downloadFn.push(function (callback) {
@@ -128,7 +128,7 @@ function downloadPage(range, cb, cbBody) {
             var stream = fs.createWriteStream(dstPath + '/'
                           + item1.id + '.metadata.' 
                           + (meta.original ? 'original.' : '')
-                          + (meta.mimetype.indexOf(meta.type) === -1 ? '.' + meta.type + '.' : '')
+                          + (meta.mimetype.indexOf(meta.extension) === -1 ? '.' + meta.extension + '.' : '')
                           + meta.mimetype.split('/').pop().replace('+', '.'));
             var req = request.get(meta.uri).auth(program.username, program.password);
             req.pipe(stream);
@@ -146,7 +146,7 @@ function downloadPage(range, cb, cbBody) {
       item1.fulltext.forEach(function (ft) {
         
         // ignore les medadonnées non souhaitées
-        if (program.fulltext.indexOf(ft.type) !== -1 || program.fulltext.indexOf('all') !== -1) {
+        if (program.fulltext.indexOf(ft.extension) !== -1 || program.fulltext.indexOf('all') !== -1) {
           // ajoute une opération de téléchargement
           // pour chaque plein texte souhaités
           downloadFn.push(function (callback) {
@@ -160,7 +160,7 @@ function downloadPage(range, cb, cbBody) {
             var stream = fs.createWriteStream(dstPath + '/'
                           + item1.id + '.fulltext.' 
                           + (ft.original ? 'original.' : '')
-                          + (ft.mimetype.indexOf(ft.type) === -1 ? ft.type + '.' : '')
+                          + (ft.mimetype.indexOf(ft.extension) === -1 ? ft.extension + '.' : '')
                           + ft.mimetype.split('/').pop().replace('+', '.'));
             var req = request.get(ft.uri).auth(program.username, program.password);
             req.pipe(stream);
