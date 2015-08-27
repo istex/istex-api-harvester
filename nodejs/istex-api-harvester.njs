@@ -196,7 +196,7 @@ function downloadPage(range, cb, cbBody) {
  * on a besoin d'indiquer des identifiants de connexion
  */
 function checkIfAuthNeeded(cb) {
-  var url = 'https://api.istex.fr/document/FE23AF48B2C738C5C1192E19D64313D1D276B1A2/fulltext/txt'; // document protégé
+  var url = 'https://api.istex.fr/auth'; // document protégé
   var agent = request.agent();
   agent
     .get(url)
