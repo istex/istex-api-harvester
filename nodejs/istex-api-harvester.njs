@@ -16,8 +16,8 @@ program
   .option('-s, --size [size]',     "Quantité de documents à télécharger", 10)
   .option('-md, --metadata [formats]', "Pour retourner seulement certain formats de metadata (ex: mods,xml)", "all")
   .option('-ft, --fulltext [formats]', "Pour retourner seulement certain formats de plein text (ex: tei,pdf)", "")
-  .option('-u, --username [username]',        "Nom d'utilisateur ISTEX", '')
-  .option('-p, --password [password]',        "Mot de passe ISTEX", '')
+  .option('-u, --username [username]', "Nom d'utilisateur ISTEX", '')
+  .option('-p, --password [password]', "Mot de passe ISTEX", '')
   .option('-v, --verbose',         "Affiche plus d'informations", false)
   .parse(process.argv);
 
@@ -40,6 +40,15 @@ for (var page = 0; page < nbPages; page++) {
   ranges.push([ page * nbHitPerPage,  nbHitPerPage]);
 };
 ranges.push([ nbPages * nbHitPerPage, nbLastPage ]);
+
+// paramétrage de l'éventuel proxy http sortant
+// en passant par la variable d'environnement http_proxy
+require('superagent-proxy')(request);
+var httpProxy = process.env.http_proxy || '';
+function prepareHttpGetRequest(url) {
+  var agent = request.agent();
+  return httpProxy ? agent.get(url).proxy(httpProxy) : agent.get(url);
+}
 
 // lance les recherches et les téléchargements
 console.log("Téléchargement des " + program.size +
@@ -93,9 +102,7 @@ function downloadPage(range, cb, cbBody) {
   // to ignore bad https certificate
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-  var agent = request.agent();
-  agent
-  .get(url)
+  prepareHttpGetRequest(url)
   .auth(program.username, program.password)
   .end(function (err, res) {
     if (err) {
@@ -130,7 +137,7 @@ function downloadPage(range, cb, cbBody) {
                           + (meta.original ? 'original.' : '')
                           + (meta.mimetype.indexOf(meta.extension) === -1 ? '.' + meta.extension + '.' : '')
                           + meta.mimetype.split('/').pop().replace('+', '.'));
-            var req = request.get(meta.uri).auth(program.username, program.password);
+            var req = prepareHttpGetRequest(meta.uri).auth(program.username, program.password);
             req.pipe(stream);
             stream.on('finish', function () {
               callback(null);
@@ -197,9 +204,7 @@ function downloadPage(range, cb, cbBody) {
  */
 function checkIfAuthNeeded(cb) {
   var url = 'https://api.istex.fr/auth'; // document protégé
-  var agent = request.agent();
-  agent
-    .get(url)
+  prepareHttpGetRequest(url)
     .auth(program.username, program.password)
     .end(function (err, res) {
       if (err) {
@@ -244,9 +249,7 @@ function askLoginPassword(cb) {
     program.username = results.username;
     program.password = results.password;
     var url = 'https://api.istex.fr/corpus/';
-    var agent = request.agent();
-    agent
-      .get(url)
+    prepareHttpGetRequest(url)
       .auth(program.username, program.password)
       .end(function (err, res) {
         if (err) {
