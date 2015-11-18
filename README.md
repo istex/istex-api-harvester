@@ -63,3 +63,11 @@ Pour les deux premiers documents téléchargés, on aura par exemple les fichier
 * ./springer/8db224e66c7fa77be4210d4d9ddb5dd84666066f.pdf
 
 A noter que la longue chaîne de caractère est l'identifiant unique du document en question. A noter que le temps d'exécution du script dépend fortement de la qualité du réseau et du volume des données téléchargées.
+
+Pour moissoner les 100 premiers documents (avec PDF) de la discipline **MATHEMATICS** sur le mot clé **Orthogonal** :
+```bash
+istex-api-harvester \
+  --query 'Orthogonal AND categories.wos.raw:("MATHEMATICS")' \
+  --fulltext pdf \
+  --size 100
+```
