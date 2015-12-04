@@ -7,23 +7,29 @@ var fs        = require('fs');
 var mkdirp    = require('mkdirp');
 var async     = require('async');
 var prompt    = require('prompt');
+var path    = require('path');
 var package   = require('./package.json');
 
 program
   .version(package.version)
-  .option('-q, --query [requete]', "La requete (?q=) ", '*')
-  .option('-c, --corpus [corpus]', "Le corpus souhaité (ex: springer, ecco, ...)", 'istex')
-  .option('-s, --size [size]',     "Quantité de documents à télécharger", 10)
+  .option('-q, --query [requete]',     "La requete (?q=) ", '*')
+  .option('-c, --corpus [corpus]',     "Le corpus souhaité (ex: springer, ecco, ...)", 'istex')
+  .option('-s, --size [size]',         "Quantité de documents à télécharger", 10)
   .option('-md, --metadata [formats]', "Pour retourner seulement certain formats de metadata (ex: mods,xml)", "all")
   .option('-ft, --fulltext [formats]', "Pour retourner seulement certain formats de plein text (ex: tei,pdf)", "")
   .option('-u, --username [username]', "Nom d'utilisateur ISTEX", '')
   .option('-p, --password [password]', "Mot de passe ISTEX", '')
-  .option('-v, --verbose',         "Affiche plus d'informations", false)
+  .option('-v, --verbose',             "Affiche plus d'informations", false)
+  .option('-S, --spread',              "ventile des fichiers téléchargés dans une arborescence à 3 niveaux", false)
+  .option('-h, --host [host/port]',    "interrogation sur un hostname (ou @IP) particulier", "")
   .parse(process.argv);
 
-var dstPath = process.cwd() + '/' + program.corpus;
+
+var prefixUrl = (program.host !== "") ? "http://" + program.host : "https://api.istex.fr";
+
+var dstPath = path.join(process.cwd(), program.corpus);
 mkdirp.sync(dstPath);
-var zipName = process.cwd() + '/' + uuid.v1() + '.zip';
+var zipName = path.join(process.cwd(), uuid.v1() + '.zip');
 
 // les paramètres metadata et fulltext peuvent contenir
 // une liste de valeurs séparées par des virgules
@@ -93,7 +99,7 @@ function downloadPages() {
 // Fonction de téléchargement d'une page
 //  
 function downloadPage(range, cb, cbBody) {
-  var url = 'https://api.istex.fr/document/?q='+program.query+'&output=metadata'
+  var url = prefixUrl + '/document/?q='+program.query+'&output=metadata'
             + (program.fulltext.length != 0 ? ',fulltext' : '')
             + ((program.corpus == 'istex') ? '' : ('&corpus=' + program.corpus))
             + '&from=' + range[0] + '&size=' + range[1];
@@ -132,20 +138,29 @@ function downloadPage(range, cb, cbBody) {
             if (program.verbose) {            
               console.log(meta);
             }
-            var stream = fs.createWriteStream(dstPath + '/'
-                          + item1.id + '.metadata.' 
-                          + (meta.original ? 'original.' : '')
-                          + (meta.mimetype.indexOf(meta.extension) === -1 ? '.' + meta.extension + '.' : '')
-                          + meta.mimetype.split('/').pop().replace('+', '.'));
-            var req = prepareHttpGetRequest(meta.uri).auth(program.username, program.password);
-            req.pipe(stream);
-            stream.on('finish', function () {
-              callback(null);
+            // ventilation dans une arborescence à 3 niveaux
+            var subFolders = (program.spread) ? path.join(item1.id[0], item1.id[1], item1.id[2]) : "" ; 
+            mkdirp(path.join(dstPath,subFolders), function(err) {
+              if (err) {
+                console("Error creating directory " + path.join(dstPath,subFolders) );
+                callback(err);
+              } 
+              var stream = fs.createWriteStream(path.join(
+                            dstPath,
+                            subFolders,
+                            item1.id + '.metadata.' 
+                              + (meta.original ? 'original.' : '')
+                              + (meta.mimetype.indexOf(meta.extension) === -1 ? '.' + meta.extension + '.' : '')
+                              + meta.mimetype.split('/').pop().replace('+', '.')));
+              var req = prepareHttpGetRequest(meta.uri).auth(program.username, program.password);
+              req.pipe(stream);
+              stream.on('finish', function () {
+                callback(null);
+              });
+              stream.on('error', callback);
             });
-            stream.on('error', callback);
           });
         }
-
       });
 
       // récupération de la liste des opérations
@@ -164,20 +179,30 @@ function downloadPage(range, cb, cbBody) {
             if (ft.mimetype == 'image/tiff') {
               ft.mimetype = 'application/zip';
             }
-            var stream = fs.createWriteStream(dstPath + '/'
-                          + item1.id + '.fulltext.' 
-                          + (ft.original ? 'original.' : '')
-                          + (ft.mimetype.indexOf(ft.extension) === -1 ? ft.extension + '.' : '')
-                          + ft.mimetype.split('/').pop().replace('+', '.'));
-            var req = request.get(ft.uri).auth(program.username, program.password);
-            req.pipe(stream);
-            stream.on('finish', function () {
-              callback(null);
-            });
-            stream.on('error', callback);
-          });
-        }
+            // ventilation dans une arborescence à 3 niveaux
+            var subFolders = (program.spread) ? path.join(item1.id[0], item1.id[1], item1.id[2]) : "" ; 
+            mkdirp(path.join(dstPath,subFolders), function(err) {
+              if (err) {
+                console("Error creating directory " + path.join(dstPath,subFolders) );
+                callback(err);
+              } 
 
+              var stream = fs.createWriteStream(path.join(
+                            dstPath,
+                            subFolders,
+                            item1.id + '.fulltext.'
+                              + (ft.original ? 'original.' : '')
+                              + (ft.mimetype.indexOf(ft.extension) === -1 ? ft.extension + '.' : '')
+                              + ft.mimetype.split('/').pop().replace('+', '.')));
+              var req = request.get(ft.uri).auth(program.username, program.password);
+              req.pipe(stream);
+              stream.on('finish', function () {
+                callback(null);
+              });
+              stream.on('error', callback);
+            });
+          }) 
+        }
       });
 
       // download the metadata and the fulltext
@@ -203,7 +228,7 @@ function downloadPage(range, cb, cbBody) {
  * on a besoin d'indiquer des identifiants de connexion
  */
 function checkIfAuthNeeded(cb) {
-  var url = 'https://api.istex.fr/auth'; // document protégé
+  var url = prefixUrl + '/auth'; // document protégé
   prepareHttpGetRequest(url)
     .auth(program.username, program.password)
     .end(function (err, res) {
@@ -248,7 +273,7 @@ function askLoginPassword(cb) {
     // then try to auth
     program.username = results.username;
     program.password = results.password;
-    var url = 'https://api.istex.fr/corpus/';
+    var url = prefixUrl + '/corpus/';
     prepareHttpGetRequest(url)
       .auth(program.username, program.password)
       .end(function (err, res) {
