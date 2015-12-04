@@ -30,7 +30,7 @@ npm install -g istex-api-harvester
 
     -h, --help                 output usage information
     -V, --version              output the version number
-    -q, --query [requete]      La requete (?q=) 
+    -q, --query [requete]      La requete (?q=)
     -c, --corpus [corpus]      Le corpus souhaité (ex: springer, ecco, ...)
     -s, --size [size]          Quantité de documents à télécharger
     -md, --metadata [formats]  Pour retourner seulement certain formats de metadata (ex: mods,xml)
@@ -38,6 +38,8 @@ npm install -g istex-api-harvester
     -u, --username [username]  Nom d'utilisateur ISTEX
     -p, --password [password]  Mot de passe ISTEX
     -v, --verbose              Affiche plus d'informations
+    -S, --spread'              Ventile des fichiers téléchargés dans une arborescence à 3 niveaux
+    -h, --host [host/port]'    Interrogation sur un hostname (ou @IP) particulier
 ```
 
 Par exemple pour moissonner les 850 premiers (ordre d'indexation) documents du corpus "springer" il faut taper ceci:
@@ -70,4 +72,14 @@ istex-api-harvester \
   --query 'Orthogonal AND categories.wos.raw:("MATHEMATICS")' \
   --fulltext pdf \
   --size 100
+```
+
+Pour interroger l'API via une adresse IP et sauvegarder les fichiers dans une arborescence à 3 niveaux :
+```bash
+istex-api-harvester \
+  --query 'Agility' \
+  --fulltext tei \
+  --size 100 \
+  --host $API_IP:$API_PORT \
+  --spread
 ```
