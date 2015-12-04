@@ -7,7 +7,7 @@ var fs        = require('fs');
 var mkdirp    = require('mkdirp');
 var async     = require('async');
 var prompt    = require('prompt');
-var path    = require('path');
+var path      = require('path');
 var package   = require('./package.json');
 
 program
@@ -21,7 +21,7 @@ program
   .option('-p, --password [password]', "Mot de passe ISTEX", '')
   .option('-v, --verbose',             "Affiche plus d'informations", false)
   .option('-S, --spread',              "ventile des fichiers téléchargés dans une arborescence à 3 niveaux", false)
-  .option('-h, --host [host/port]',    "interrogation sur un hostname (ou @IP) particulier", "")
+  .option('-h, --host [host:port]',    "interrogation sur un hostname (ou @IP) particulier", "")
   .parse(process.argv);
 
 
