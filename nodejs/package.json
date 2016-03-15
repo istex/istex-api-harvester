@@ -7,8 +7,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Stéphane Gully <stephane.gully@gmail.com>",
   "contributors": [
+    {
+      "name" : "Stéphane Gully",
+      "email": "stephane.gully@gmail.com"
+    },
     {
       "name" : "Claude Niederlender",
       "email": "claude.niederlender@gmail.com"
