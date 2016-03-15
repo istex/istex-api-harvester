@@ -30,16 +30,18 @@ npm install -g istex-api-harvester
 
     -h, --help                 output usage information
     -V, --version              output the version number
-    -q, --query [requete]      La requete (?q=)
+    -q, --query [requete]      La requete (?q=) 
     -c, --corpus [corpus]      Le corpus souhaité (ex: springer, ecco, ...)
     -s, --size [size]          Quantité de documents à télécharger
-    -md, --metadata [formats]  Pour retourner seulement certain formats de metadata (ex: mods,xml)
-    -ft, --fulltext [formats]  Pour retourner seulement certain formats de plein text (ex: tei,pdf)
+    -m, --metadata [formats]   Pour retourner seulement certain formats de metadata (ex: mods,xml)
+    -f, --fulltext [formats]   Pour retourner seulement certain formats de plein text (ex: tei,pdf)
     -u, --username [username]  Nom d'utilisateur ISTEX
     -p, --password [password]  Mot de passe ISTEX
     -v, --verbose              Affiche plus d'informations
-    -S, --spread'              Ventile des fichiers téléchargés dans une arborescence à 3 niveaux
-    -h, --host [host/port]'    Interrogation sur un hostname (ou @IP) particulier
+    -S, --spread               ventile des fichiers téléchargés dans une arborescence à 3 niveaux
+    -H, --host [host:port]     interrogation sur un hostname (ou @IP) particulier
+    -b, --sortby [sortMode]    tri sur un ou plusieurs champ
+    -o, --output [outputDir]   répertoire de destination (output ou nom de corpus si précisé)
 ```
 
 Par exemple pour moissonner les 850 premiers (ordre d'indexation) documents du corpus "springer" il faut taper ceci:

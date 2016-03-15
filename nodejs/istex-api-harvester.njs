@@ -15,21 +15,25 @@ program
   .option('-q, --query [requete]',     "La requete (?q=) ", '*')
   .option('-c, --corpus [corpus]',     "Le corpus souhaité (ex: springer, ecco, ...)", 'istex')
   .option('-s, --size [size]',         "Quantité de documents à télécharger", 10)
-  .option('-md, --metadata [formats]', "Pour retourner seulement certain formats de metadata (ex: mods,xml)", "all")
-  .option('-ft, --fulltext [formats]', "Pour retourner seulement certain formats de plein text (ex: tei,pdf)", "")
+  .option('-m, --metadata [formats]', "Pour retourner seulement certain formats de metadata (ex: mods,xml)", "all")
+  .option('-f, --fulltext [formats]', "Pour retourner seulement certain formats de plein text (ex: tei,pdf)", "")
   .option('-u, --username [username]', "Nom d'utilisateur ISTEX", '')
   .option('-p, --password [password]', "Mot de passe ISTEX", '')
   .option('-v, --verbose',             "Affiche plus d'informations", false)
   .option('-S, --spread',              "ventile des fichiers téléchargés dans une arborescence à 3 niveaux", false)
-  .option('-h, --host [host:port]',    "interrogation sur un hostname (ou @IP) particulier", "")
+  .option('-H, --host [host:port]',    "interrogation sur un hostname (ou @IP) particulier", "")
+  .option('-b, --sortby [sortMode]',             "tri sur un ou plusieurs champ", "")
+  .option('-o, --output [outputDir]',             "répertoire de destination (output ou nom de corpus si précisé)","output")
   .parse(process.argv);
 
 
 var prefixUrl = (program.host !== "") ? "http://" + program.host : "https://api.istex.fr";
 
-var dstPath = path.join(process.cwd(), program.corpus);
+var dstPath = path.join(process.cwd(), program.output);
 mkdirp.sync(dstPath);
 var zipName = path.join(process.cwd(), uuid.v1() + '.zip');
+
+var randomSeed = (new Date()).getTime();
 
 // les paramètres metadata et fulltext peuvent contenir
 // une liste de valeurs séparées par des virgules
@@ -103,7 +107,9 @@ function downloadPage(range, cb, cbBody) {
             + (program.fulltext.length != 0 ? ',fulltext' : '')
             + ((program.corpus == 'istex') ? '' : ('&corpus=' + program.corpus))
             + '&from=' + range[0] + '&size=' + range[1];
-  console.log(url);
+
+  if (program.sortby !== "") url += '&sortBy=' + program.sortby;
+  if (program.sortby == "random") url += '&randomSeed=' + randomSeed;
 
   // to ignore bad https certificate
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
