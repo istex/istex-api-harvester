@@ -1,13 +1,8 @@
 # istex-api-harvester
 
-Programmes permettant de moissonner les corpus proposés par l'API de la plateforme ISTEX.
-
-Plusieurs moissonneurs sont proposés dans différents langages de programmation :
-* [NodeJS](https://github.com/istex/istex-api-harvester/blob/master/nodejs/istex-api-harvester.njs)
-* [Bash](https://github.com/istex/istex-api-harvester/blob/master/bash/istex-api-harvester.sh) (vocation pédagogique)
-* ...
-
-Le programme de moissonnage le plus complet est la version NodeJS. La suite de ce README documente donc l'utilisation de ce script.
+Utilitaire en ligne de commande permettant de moissonner les corpus proposés par l'API de la plateforme ISTEX.
+En plus du présent moissonneur écrit en NodeJS, une [version expérimentale en BASH](https://github.com/istex/istex-api-harvester/tree/master/misc/bash) est disponible.
+La présente documentation concerne la version principale NodeJS.
 
 ## Pré requis
 
