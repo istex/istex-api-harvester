@@ -1,20 +1,21 @@
 Docker et harvester
 ===================
 
-Avertissements: 
+**Avertissements**
 
-- ce fonctionne que sous un docker host "natif" (docker-machine sous Windows ou MacOS non supporté)
+- ne fonctionne que sous un docker host "natif" (docker-machine sous Windows ou MacOS non supporté)
 - la version 2 de docker-compose est requise (>= 1.6.0)
 
-Il faut définir les variables d'envionnement suivantes:
+**Pré-requis**
+Il faut définir les variables d'environnement suivantes:
 
-- XTRACTDIR: le répertoire sur le docker host qui va contenir l'extraction demandée
-- XTRACTUID: l'UID de l'extracteur sur le host
-- XTRACTGID: le GID de l'extracteur sur le host
+- `XTRACTDIR` le répertoire sur le docker host qui va contenir l'extraction demandée
+- `XTRACTUID` l'UID de l'extracteur sur le host
+- `XTRACTGID` le GID de l'extracteur sur le host
 
 Les deux dernières variables permettent à l'harvester de générer des fichiers ou des répertoires qui appartiendront à celui qui lance le conteneur docker.
 
-Exemples d'utilisation:
+**Exemples**
 
     vagrant@docker:~/istex-api-harvester/contrib/docker$ docker-compose run --rm harvester -h
       
