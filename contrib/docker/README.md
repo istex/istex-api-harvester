@@ -7,6 +7,7 @@ Docker et harvester
 - la version 2 de docker-compose est requise (>= 1.6.0)
 
 **Pré-requis**
+
 Il faut définir les variables d'environnement suivantes:
 
 - `XTRACTDIR` le répertoire sur le docker host qui va contenir l'extraction demandée
