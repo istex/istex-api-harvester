@@ -1,0 +1,14 @@
+version: '2'
+services:
+ harvester:
+    build: 
+      context: .
+      args:
+        http_proxy:
+        https_proxy:
+        no_proxy:
+        XTRACTUID:
+        XTRACTGID:
+    volumes:
+      - $XTRACTDIR:/output
+    entrypoint: /usr/local/bin/istex-api-harvester
