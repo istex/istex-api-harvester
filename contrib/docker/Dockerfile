@@ -7,5 +7,5 @@ RUN npm install -g istex-api-harvester
 ARG XTRACTGID
 ARG XTRACTUID
 
-RUN groupadd -g $XTRACTGID harvester && useradd -u $XTRACTUID -g harvester harvester
+RUN groupadd -g $XTRACTGID harvester && useradd -u $XTRACTUID -g harvester -d /harvester -m harvester
 USER harvester
