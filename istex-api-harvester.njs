@@ -37,8 +37,8 @@ var randomSeed = (new Date()).getTime();
 
 // les paramètres metadata et fulltext peuvent contenir
 // une liste de valeurs séparées par des virgules
-program.metadata = program.metadata.split(',');
-program.fulltext = program.fulltext.split(',');
+program.metadata = program.metadata.split(',').filter(function (elt) { return elt != ''; });
+program.fulltext = program.fulltext.split(',').filter(function (elt) { return elt != ''; });
 
 // découpe le téléchargement par pages
 // pour éviter de faire une énorme requête
@@ -70,7 +70,7 @@ console.log("Téléchargement des " + program.size +
  * - demande le login/password si nécessaire
  * - lance le téléchargement
  */
-checkIfAuthNeeded(function (err, needAuth) {
+checkIfAuthNeeded(program, function (err, needAuth) {
   if (err) return console.error(err);
   if (needAuth) {
     askLoginPassword(downloadPages);
@@ -134,7 +134,7 @@ function downloadPage(range, cb, cbBody) {
 
       // récupération de la liste des opérations
       // de téléchargement des métadonnées
-      item1.metadata.forEach(function (meta) {
+      item1.metadata && item1.metadata.forEach(function (meta) {
         
         // ignore les medadonnées non souhaitées
         if (program.metadata.indexOf(meta.extension) !== -1 || program.metadata.indexOf('all') !== -1) {
@@ -171,7 +171,7 @@ function downloadPage(range, cb, cbBody) {
 
       // récupération de la liste des opérations
       // de téléchargement des pleins textes
-      item1.fulltext.forEach(function (ft) {
+      item1.fulltext && item1.fulltext.forEach(function (ft) {
         
         // ignore les medadonnées non souhaitées
         if (program.fulltext.indexOf(ft.extension) !== -1 || program.fulltext.indexOf('all') !== -1) {
@@ -233,7 +233,15 @@ function downloadPage(range, cb, cbBody) {
  * Tentative de connexion à l'API pour vérifier si
  * on a besoin d'indiquer des identifiants de connexion
  */
-function checkIfAuthNeeded(cb) {
+function checkIfAuthNeeded(program, cb) {
+  // on ne cherche pas a authentifier si l'utilisateur ne demande
+  // que des métadonnées non authentifiées (mods)
+  if (program.metadata.length == 1 && program.metadata[0] == 'mods' &&
+      program.fulltext.length == 0) {
+    return cb(null, false);
+  }
+  // dans le cas contraire, avant de demander un login/mdp 
+  // on vérifie si par hasard on n'est pas déjà autorisé (par IP)
   var url = prefixUrl + '/auth'; // document protégé
   prepareHttpGetRequest(url)
     .auth(program.username, program.password)
