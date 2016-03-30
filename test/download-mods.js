@@ -12,8 +12,11 @@ describe('istex-api-harvester', function () {
     var dirId = uuid.v1();
 
     var child   = spawn(
-      __dirname + '/../istex-api-harvester.njs',
-      [ '--size=2', '--metadata=mods', '--output=' + dirId ], { cwd: '/tmp/' });
+      'node',
+      [ __dirname + '/../istex-api-harvester.njs',
+        '--size=2',
+        '--metadata=mods',
+        '--output=' + dirId ], { cwd: '/tmp/' });
     
     child.stdout.on('end', function () {
       assert.equal(fs.readdirSync('/tmp/' + dirId).length, 2);
