@@ -4,6 +4,8 @@ Utilitaire en ligne de commande permettant de moissonner les corpus proposés pa
 En plus du présent moissonneur écrit en NodeJS, une [version expérimentale en BASH](https://github.com/istex/istex-api-harvester/tree/master/misc/bash) est disponible.
 La présente documentation concerne la version principale NodeJS.
 
+![anim](https://cloud.githubusercontent.com/assets/328244/14159865/d012b4b6-f6d8-11e5-8dd2-7766896cd462.gif)
+
 ## Pré requis
 
 Les prérequis pour l'utiliser sont :
