@@ -73,7 +73,10 @@ console.log("Téléchargement des " + program.size +
 checkIfAuthNeeded(program, function (err, needAuth) {
   if (err) return console.error(err);
   if (needAuth) {
-    askLoginPassword(downloadPages);
+    askLoginPassword(function (err) {
+      if (err) return new Error(err);
+      downloadPages()
+    });
   } else {
     downloadPages();
   }
