@@ -4,11 +4,15 @@ services:
     build: 
       context: .
       args:
-        http_proxy:
-        https_proxy:
-        no_proxy:
-        XTRACTUID:
-        XTRACTGID:
+        - http_proxy
+        - https_proxy
+        - no_proxy
+        - XTRACTUID
+        - XTRACTGID
     volumes:
       - $XTRACTDIR:/output
-    entrypoint: /usr/local/bin/istex-api-harvester
+    entrypoint:
+        - /usr/local/bin/node
+        - --stack-size=32000
+        - --max_old_space_size=4096
+        - /usr/local/bin/istex-api-harvester
