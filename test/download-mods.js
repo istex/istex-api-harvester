@@ -6,6 +6,8 @@ var fs          = require('fs');
 var uuid        = require('node-uuid');
 
 describe('istex-api-harvester', function () {
+  // 10 secondes de timeout car test potentiellement long en fonction du réseau
+  this.timeout(10000);
 
   it('devrait être capable de télécharger 2 métadonnées au format MODS', function (done) {
 
