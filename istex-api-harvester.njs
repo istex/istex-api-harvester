@@ -15,15 +15,17 @@ program
   .option('-q, --query [requete]',     "La requete (?q=) ", '*')
   .option('-c, --corpus [corpus]',     "Le corpus souhaité (ex: springer, ecco, ...)", 'istex')
   .option('-s, --size [size]',         "Quantité de documents à télécharger", 10)
-  .option('-m, --metadata [formats]', "Pour retourner seulement certain formats de metadata (ex: mods,xml)", "all")
-  .option('-f, --fulltext [formats]', "Pour retourner seulement certain formats de plein text (ex: tei,pdf)", "")
+  .option('-m, --metadata [formats]',  "Pour retourner seulement certain formats de metadata (ex: mods,xml)", "all")
+  .option('-f, --fulltext [formats]',  "Pour retourner seulement certain formats de plein text (ex: tei,pdf)", "")
   .option('-u, --username [username]', "Nom d'utilisateur ISTEX", '')
   .option('-p, --password [password]', "Mot de passe ISTEX", '')
   .option('-v, --verbose',             "Affiche plus d'informations", false)
   .option('-S, --spread',              "ventile des fichiers téléchargés dans une arborescence à 3 niveaux", false)
   .option('-H, --host [host:port]',    "interrogation sur un hostname (ou @IP) particulier", "")
-  .option('-b, --sortby [sortMode]',             "tri sur un ou plusieurs champ", "")
-  .option('-o, --output [outputDir]',             "répertoire de destination (output ou nom de corpus si précisé)","output")
+  .option('-b, --sortby [sortMode]',   "tri sur un ou plusieurs champ", "")
+  .option('-r, --rankby [rankMode]',   "mode de ranking", "")
+  .option('-w, --workers [nbWorkers]', "nombre de workers fonctionnant en parallèle (permet de télécharger plusieurs pages simultanément)", 1)
+  .option('-o, --output [outputDir]',  "répertoire de destination (output ou nom de corpus si précisé)","output")
   .parse(process.argv);
 
 
@@ -87,7 +89,7 @@ checkIfAuthNeeded(program, function (err, needAuth) {
  */
 function downloadPages() {
   var firstPage = true;
-  async.mapLimit(ranges, 1, function (range, cb) {
+  async.mapLimit(ranges, program.workers, function (range, cb) {
     downloadPage(range, cb, function (body) {
       if (firstPage) {
         console.log("Nombre de documents dans le corpus " + program.corpus + " : " + body.total);
@@ -112,7 +114,8 @@ function downloadPage(range, cb, cbBody) {
             + '&from=' + range[0] + '&size=' + range[1];
 
   if (program.sortby !== "") url += '&sortBy=' + program.sortby;
-  if (program.sortby == "random") url += '&randomSeed=' + randomSeed;
+  if (program.rankby !== "") url += '&rankBy=' + program.rankby;
+  if (program.rankby == "random") url += '&randomSeed=' + randomSeed;
 
   // to ignore bad https certificate
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";

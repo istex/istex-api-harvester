@@ -38,6 +38,8 @@ npm install -g istex-api-harvester
     -S, --spread               ventile des fichiers téléchargés dans une arborescence à 3 niveaux
     -H, --host [host:port]     interrogation sur un hostname (ou @IP) particulier
     -b, --sortby [sortMode]    tri sur un ou plusieurs champ
+    -r, --rankby [rankMode]    mode de ranking 
+    -w, --workers [nbWorkers]  nombre de workers fonctionnant en parallèle (permet de télécharger plusieurs pages simultanément)
     -o, --output [outputDir]   répertoire de destination (output ou nom de corpus si précisé)
 ```
 
