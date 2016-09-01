@@ -68,8 +68,9 @@ function prepareHttpGetRequest(url) {
 }
 
 // lance les recherches et les téléchargements
-console.log("Téléchargement des " + program.size +
-            " premiers documents (metadata & fulltext) ici : " + dstPath);
+console.log("Téléchargement de " + program.size +
+            " documents (metadata & fulltext) à partir du résultat n° " + from);
+console.log("Données téléchargées dans le répertoire : " + dstPath);
 
 /**
  * Point d'entrée
@@ -97,11 +98,11 @@ function downloadPages() {
   async.mapLimit(ranges, program.workers, function (range, cb) {
     downloadPage(range, cb, function (body) {
       if (firstPage) {
-        console.log("Nombre de documents dans le corpus " + program.corpus + " : " + body.total);
+        console.log("Nombre de documents dans le corpus sélectionné : " + body.total);
         firstPage = false;
       }
       console.log('Téléchargement de la page ' +
-                  (range[0] / nbHitPerPage +1 ) + ' (' + (range[0] + range[1]) + ' documents)');
+                  ((range[0] - from) / nbHitPerPage +1) + ' (' + (range[0] + range[1] - from) + ' documents)');
     });
   }, function (err) {
     if (err) return console.error(err);

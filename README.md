@@ -6,6 +6,9 @@ La présente documentation concerne la version principale NodeJS.
 
 ![anim](https://cloud.githubusercontent.com/assets/328244/14159865/d012b4b6-f6d8-11e5-8dd2-7766896cd462.gif)
 
+## Note de vers importante
+Depuis la version 2.5, et suite à l'introduction du paramètre `-f/--from` les paramètres `-f` (fulltext) et `-m` (metadata) on été renommés et doivent être saisis en majuscule `-F` et `-M`  
+
 ## Pré requis
 
 Les prérequis pour l'utiliser sont :
@@ -25,22 +28,23 @@ npm install -g istex-api-harvester
 
   Options:
 
-    -h, --help                 output usage information
-    -V, --version              output the version number
-    -q, --query [requete]      La requete (?q=) 
-    -c, --corpus [corpus]      Le corpus souhaité (ex: springer, ecco, ...)
-    -s, --size [size]          Quantité de documents à télécharger
-    -m, --metadata [formats]   Pour retourner seulement certain formats de metadata (ex: mods,xml)
-    -f, --fulltext [formats]   Pour retourner seulement certain formats de plein text (ex: tei,pdf)
-    -u, --username [username]  Nom d'utilisateur ISTEX
-    -p, --password [password]  Mot de passe ISTEX
-    -v, --verbose              Affiche plus d'informations
-    -S, --spread               ventile des fichiers téléchargés dans une arborescence à 3 niveaux
-    -H, --host [host:port]     interrogation sur un hostname (ou @IP) particulier
-    -b, --sortby [sortMode]    tri sur un ou plusieurs champ
-    -r, --rankby [rankMode]    mode de ranking 
-    -w, --workers [nbWorkers]  nombre de workers fonctionnant en parallèle (permet de télécharger plusieurs pages simultanément)
-    -o, --output [outputDir]   répertoire de destination (output ou nom de corpus si précisé)
+    -h, --help                   output usage information
+    -V, --version                output the version number
+    -q, --query [requete]        La requete (?q=) 
+    -c, --corpus [corpus]        Le corpus souhaité (ex: springer, ecco, ...)
+    -f, --from [startingResult]  rang du premier document à télécharge (0 par défaut)
+    -s, --size [size]            Quantité de documents à télécharger
+    -M, --metadata [formats]     Pour retourner seulement certain formats de metadata (ex: mods,xml)
+    -F, --fulltext [formats]     Pour retourner seulement certain formats de plein text (ex: tei,pdf)
+    -u, --username [username]    Nom d'utilisateur ISTEX
+    -p, --password [password]    Mot de passe ISTEX
+    -v, --verbose                Affiche plus d'informations
+    -S, --spread                 ventile des fichiers téléchargés dans une arborescence à 3 niveaux
+    -H, --host [host:port]       interrogation sur un hostname (ou @IP) particulier
+    -b, --sortby [sortMode]      tri sur un ou plusieurs champ
+    -r, --rankby [rankMode]      mode de ranking 
+    -w, --workers [nbWorkers]    nombre de workers fonctionnant en parallèle (permet de télécharger plusieurs pages simultanément)
+    -o, --output [outputDir]     répertoire de destination (output ou nom de corpus si précisé)
 ```
 
 Par exemple pour moissonner les 850 premiers (ordre d'indexation) documents du corpus "springer" il faut taper ceci:
