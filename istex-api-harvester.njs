@@ -12,20 +12,21 @@ var package   = require('./package.json');
 
 program
   .version(package.version)
-  .option('-q, --query [requete]',     "La requete (?q=) ", '*')
-  .option('-c, --corpus [corpus]',     "Le corpus souhaité (ex: springer, ecco, ...)", 'istex')
-  .option('-s, --size [size]',         "Quantité de documents à télécharger", 10)
-  .option('-m, --metadata [formats]',  "Pour retourner seulement certain formats de metadata (ex: mods,xml)", "all")
-  .option('-f, --fulltext [formats]',  "Pour retourner seulement certain formats de plein text (ex: tei,pdf)", "")
-  .option('-u, --username [username]', "Nom d'utilisateur ISTEX", '')
-  .option('-p, --password [password]', "Mot de passe ISTEX", '')
-  .option('-v, --verbose',             "Affiche plus d'informations", false)
-  .option('-S, --spread',              "ventile des fichiers téléchargés dans une arborescence à 3 niveaux", false)
-  .option('-H, --host [host:port]',    "interrogation sur un hostname (ou @IP) particulier", "")
-  .option('-b, --sortby [sortMode]',   "tri sur un ou plusieurs champ", "")
-  .option('-r, --rankby [rankMode]',   "mode de ranking", "")
-  .option('-w, --workers [nbWorkers]', "nombre de workers fonctionnant en parallèle (permet de télécharger plusieurs pages simultanément)", 1)
-  .option('-o, --output [outputDir]',  "répertoire de destination (output ou nom de corpus si précisé)","output")
+  .option('-q, --query [requete]',       "La requete (?q=) ", '*')
+  .option('-c, --corpus [corpus]',       "Le corpus souhaité (ex: springer, ecco, ...)", 'istex')
+  .option('-f, --from [startingResult]', "rang du premier document à télécharge (0 par défaut", 0)
+  .option('-s, --size [size]',           "Quantité de documents à télécharger", 10)
+  .option('-M, --metadata [formats]',    "Pour retourner seulement certain formats de metadata (ex: mods,xml)", "all")
+  .option('-F, --fulltext [formats]',    "Pour retourner seulement certain formats de plein text (ex: tei,pdf)", "")
+  .option('-u, --username [username]',   "Nom d'utilisateur ISTEX", '')
+  .option('-p, --password [password]',   "Mot de passe ISTEX", '')
+  .option('-v, --verbose',               "Affiche plus d'informations", false)
+  .option('-S, --spread',                "ventile des fichiers téléchargés dans une arborescence à 3 niveaux", false)
+  .option('-H, --host [host:port]',      "interrogation sur un hostname (ou @IP) particulier", "")
+  .option('-b, --sortby [sortMode]',     "tri sur un ou plusieurs champ", "")
+  .option('-r, --rankby [rankMode]',     "mode de ranking", "")
+  .option('-w, --workers [nbWorkers]',   "nombre de workers fonctionnant en parallèle (permet de télécharger plusieurs pages simultanément)", 1)
+  .option('-o, --output [outputDir]',    "répertoire de destination (output ou nom de corpus si précisé)","output")
   .parse(process.argv);
 
 
@@ -42,6 +43,10 @@ var randomSeed = (new Date()).getTime();
 program.metadata = program.metadata.split(',').filter(function (elt) { return elt != ''; });
 program.fulltext = program.fulltext.split(',').filter(function (elt) { return elt != ''; });
 
+// vérification sur le paramètre from
+var from = parseInt(program.from,10);
+if (from < 0) from = 0;
+
 // découpe le téléchargement par pages
 // pour éviter de faire une énorme requête
 var nbHitPerPage = 100;
@@ -49,9 +54,9 @@ var nbPages      = Math.floor(program.size / nbHitPerPage);
 var nbLastPage   = program.size - (nbPages * nbHitPerPage);
 var ranges       = [];
 for (var page = 0; page < nbPages; page++) {
-  ranges.push([ page * nbHitPerPage,  nbHitPerPage]);
+  ranges.push([ from + page * nbHitPerPage,  nbHitPerPage]);
 };
-ranges.push([ nbPages * nbHitPerPage, nbLastPage ]);
+ranges.push([ from + nbPages * nbHitPerPage, nbLastPage ]);
 
 // paramétrage de l'éventuel proxy http sortant
 // en passant par la variable d'environnement http_proxy
