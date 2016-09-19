@@ -1,6 +1,6 @@
 {
   "name": "istex-api-harvester",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "description": "Programme écrit en NodeJS permettant de moissonner les corpus proposés par l'API de la plateforme ISTEX.",
   "preferGlobal": "true",
   "main": "istex-api-harvester.njs",
