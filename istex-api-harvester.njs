@@ -122,6 +122,10 @@ function downloadPage(range, cb, cbBody) {
   if (program.sortby !== "") url += '&sortBy=' + program.sortby;
   if (program.rankby !== "") url += '&rankBy=' + program.rankby;
   if (program.rankby == "random") url += '&randomSeed=' + randomSeed;
+  
+  // sid permet de savoir plus facilement avec quel outil les documents istex ont été récupérés
+  // ceci à des fins de statistiques (Accès tdm vs documentaire)
+  url += '&sid=istex-api-harvester';
 
   // to ignore bad https certificate
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -147,6 +151,9 @@ function downloadPage(range, cb, cbBody) {
       // récupération de la liste des opérations
       // de téléchargement des métadonnées
       item1.metadata && item1.metadata.forEach(function (meta) {
+
+        // ajoute également le  sid dans le téléchargement de la metadonnées
+        meta.uri += '?sid=istex-api-harvester';
         
         // ignore les medadonnées non souhaitées
         if (program.metadata.indexOf(meta.extension) !== -1 || program.metadata.indexOf('all') !== -1) {
@@ -185,6 +192,9 @@ function downloadPage(range, cb, cbBody) {
       // de téléchargement des pleins textes
       item1.fulltext && item1.fulltext.forEach(function (ft) {
         
+        // ajoute également le sid dans le téléchargement du fulltext
+        ft.uri += '?sid=istex-api-harvester';
+
         // ignore les medadonnées non souhaitées
         if (program.fulltext.indexOf(ft.extension) !== -1 || program.fulltext.indexOf('all') !== -1) {
           // ajoute une opération de téléchargement
