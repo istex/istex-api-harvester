@@ -6,7 +6,7 @@ La présente documentation concerne la version principale NodeJS.
 
 ![anim](https://cloud.githubusercontent.com/assets/328244/14159865/d012b4b6-f6d8-11e5-8dd2-7766896cd462.gif)
 
-## Note de vers importante
+## Note de version importante
 Depuis la version 2.5, et suite à l'introduction du paramètre `-f/--from` les paramètres `-f` (fulltext) et `-m` (metadata) on été renommés et doivent être saisis en majuscule `-F` et `-M`  
 
 ## Pré requis
