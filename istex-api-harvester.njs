@@ -13,6 +13,7 @@ var package   = require('./package.json');
 program
   .version(package.version)
   .option('-q, --query [requete]',       "La requete (?q=) ", '*')
+  .option('-t, --scroll [scroll]',       "fonctionnalité de scrolling, conçue pour les besoins de parcours / extractions de gros ensembles", "")
   .option('-c, --corpus [corpus]',       "Le corpus souhaité (ex: springer, ecco, ...)", 'istex')
   .option('-f, --from [startingResult]', "rang du premier document à télécharge (0 par défaut", 0)
   .option('-s, --size [size]',           "Quantité de documents à télécharger", 10)
@@ -29,8 +30,7 @@ program
   .option('-o, --output [outputDir]',    "répertoire de destination (output ou nom de corpus si précisé)","output")
   .parse(process.argv);
 
-
-var prefixUrl = (program.host !== "") ? "http://" + program.host : "https://api.istex.fr";
+var prefixUrl = (program.host !== "") ? "https://" + program.host : "https://api.istex.fr";
 
 var dstPath = path.join(process.cwd(), program.output);
 mkdirp.sync(dstPath);
@@ -38,6 +38,7 @@ var zipName = path.join(process.cwd(), uuid.v1() + '.zip');
 
 var randomSeed = (new Date()).getTime();
 
+var scrollId='';
 // les paramètres metadata et fulltext peuvent contenir
 // une liste de valeurs séparées par des virgules
 program.metadata = program.metadata.split(',').filter(function (elt) { return elt != ''; });
@@ -101,8 +102,15 @@ function downloadPages() {
         console.log("Nombre de documents dans le corpus sélectionné : " + body.total);
         firstPage = false;
       }
-      console.log('Téléchargement de la page ' +
+      if (program.scroll !== "") 
+      {
+        console.log('Vous avez déjà téléchargés ' + (range[0] + range[1] - from) + ' documents');
+      }
+      else{
+        console.log('Téléchargement de la page ' +
                   ((range[0] - from) / nbHitPerPage +1) + ' (' + (range[0] + range[1] - from) + ' documents)');
+      }
+ 
     });
   }, function (err) {
     if (err) return console.error(err);
@@ -117,11 +125,18 @@ function downloadPage(range, cb, cbBody) {
   var url = prefixUrl + '/document/?q='+program.query+'&output=metadata'
             + (program.fulltext.length != 0 ? ',fulltext' : '')
             + ((program.corpus == 'istex') ? '' : ('&corpus=' + program.corpus))
-            + '&from=' + range[0] + '&size=' + range[1];
+            + '&size=' + range[1];
 
+  if (program.scroll !== ""){
+    url += '&scroll=' + program.scroll;
+  }
+  else{
+    url += '&from=' + range[0];
+  }
+  if (scrollId) url += '&scrollId='+scrollId;
   if (program.sortby !== "") url += '&sortBy=' + program.sortby;
   if (program.rankby !== "") url += '&rankBy=' + program.rankby;
-  if (program.rankby == "random") url += '&randomSeed=' + randomSeed;
+  if (program.rankby == "random") url += '&randomSeed=' + randomSeed; 
   
   // sid permet de savoir plus facilement avec quel outil les documents istex ont été récupérés
   // ceci à des fins de statistiques (Accès tdm vs documentaire)
@@ -141,6 +156,10 @@ function downloadPage(range, cb, cbBody) {
     }
 
     // transmission du body pour les messages
+    scrollId = res.body.scrollId;
+    if (program.verbose){
+        console.log(url);
+    }
     cbBody(res.body);
 
     // lancement des téléchargement de façon séquentielle

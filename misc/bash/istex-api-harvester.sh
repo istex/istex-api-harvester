@@ -10,7 +10,9 @@
 
 PAGE_SIZE=10
 ISTEX_QUERY="hypertext"
-ISTEX_URI="https://api.istex.fr/document/?q=$ISTEX_QUERY&size=$PAGE_SIZE"
+SCROLLID="30s"
+#ISTEX_URI="https://api-v5.istex.fr/document/?q=$ISTEX_QUERY&size=$PAGE_SIZE"
+ISTEX_URI="https://api.istex.fr/document/?q=$ISTEX_QUERY&size=$PAGE_SIZE&scrollId=$CROLLID"
 
 # Outil JQ permettant de manipuler le JSON en ligne de commande
 # http://stedolan.github.io/jq/
