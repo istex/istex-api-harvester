@@ -32,6 +32,7 @@ npm install -g istex-api-harvester
     -V, --version                output the version number
     -q, --query [requete]        La requete (?q=) 
     -c, --corpus [corpus]        Le corpus souhaité (ex: springer, ecco, ...)
+    -t, --scroll [scroll]        durée de vie d'un ensemble de réponses pour un parcours de type "scroll" (pour les parcours / extractions de gros ensembles)
     -f, --from [startingResult]  rang du premier document à télécharge (0 par défaut)
     -s, --size [size]            Quantité de documents à télécharger
     -M, --metadata [formats]     Pour retourner seulement certain formats de metadata (ex: mods,xml)
