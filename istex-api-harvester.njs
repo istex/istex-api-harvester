@@ -251,7 +251,7 @@ function downloadPage(range, cb, cbBody) {
                   + (ft.original ? 'original.' : '')
                   + (ft.mimetype.indexOf(ft.extension) === -1 ? ft.extension + '.' : '')
                   + ft.mimetype.split('/').pop().replace('+', '.')));
-                var req = request.get(ft.uri).auth(program.username, program.password);
+                var req = prepareHttpGetRequest(ft.uri).auth(program.username, program.password);
                 req.pipe(stream);
                 stream.on('finish', function () {
                   callback(null);
