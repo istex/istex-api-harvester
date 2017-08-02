@@ -161,7 +161,9 @@ function downloadPage(range, cb, cbBody) {
           return cb(new Error('Response error: statusCode=' + res.statusCode));
         }
         else{
-          console.log('ERROR : ',res.statusCode);
+          console.error('ERROR %d retrieving next %s hits : scroll session may have expired. Try to increase value of -t/--scroll parameter.',res.statusCode, nbHitPerPage);
+          console.error('URL : %s',url)
+          return cb(new Error('Response error: statusCode=' + res.statusCode));
         }
       }
 
