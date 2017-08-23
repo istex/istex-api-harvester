@@ -32,7 +32,7 @@ npm install -g istex-api-harvester
     -V, --version                output the version number
     -q, --query [requete]        La requete (?q=) 
     -c, --corpus [corpus]        Le corpus souhaité (ex: springer, ecco, ...)
-    -t, --scroll [scroll]        durée de vie d'un ensemble de réponses pour un parcours de type "scroll" (pour les parcours / extractions de gros ensembles)
+    -t, --scroll [scroll]        durée de vie d'un ensemble de réponses pour un parcours de type "scroll" pour les parcours / extractions de gros ensembles ("30s" par défaut)
     -f, --from [startingResult]  rang du premier document à télécharge (0 par défaut)
     -s, --size [size]            Quantité de documents à télécharger
     -M, --metadata [formats]     Pour retourner seulement certain formats de metadata (ex: mods,xml)
@@ -41,7 +41,7 @@ npm install -g istex-api-harvester
     -p, --password [password]    Mot de passe ISTEX
     -v, --verbose                Affiche plus d'informations
     -S, --spread                 ventile des fichiers téléchargés dans une arborescence à 3 niveaux
-    -H, --host [host:port]       interrogation sur un hostname (ou @IP) particulier
+    -H, --host [host:port]       interrogation sur une autre adresse que api.istex.fr (ex: "hostname:port")
     -b, --sortby [sortMode]      tri sur un ou plusieurs champ
     -r, --rankby [rankMode]      mode de ranking 
     -w, --workers [nbWorkers]    nombre de workers fonctionnant en parallèle (permet de télécharger plusieurs pages simultanément)
@@ -80,7 +80,12 @@ istex-api-harvester \
   --size 100
 ```
 
-Pour interroger l'API via une adresse IP et sauvegarder les fichiers dans une arborescence à 3 niveaux :
+Pour moissoner un gros corpus avec de nombreux documents en utilisant l'option scroll :
+```bash
+istex-api-harvester -q scrum --scroll="150s" --fulltext=pdf,tei,txt --metadata=mods,xml --size=10000
+```
+
+Pour interroger l'API sur une autre machine $API_IP:$API_PORT (utile pour les développements) et sauvegarder les fichiers dans une arborescence à 3 niveaux :
 ```bash
 istex-api-harvester \
   --query 'Agility' \
