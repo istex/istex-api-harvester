@@ -13,7 +13,7 @@ var package = require('./package.json');
 program
   .version(package.version)
   .option('-q, --query [requete]', "La requete (?q=) ", '*')
-  .option('-t, --scroll [scroll]', "durée de vie d'un ensemble de réponses pour un parcours de type \"scroll\" pour les parcours / extractions de gros ensembles ("30s" par défaut)", "30s")
+  .option('-t, --scroll [scroll]', "durée de vie d'un ensemble de réponses pour un parcours de type \"scroll\" pour les parcours / extractions de gros ensembles (\"30s\" par défaut)", "30s")
   .option('-c, --corpus [corpus]', "Le corpus souhaité (ex: springer, ecco, ...)", 'istex')
   .option('-f, --from [startingResult]', "rang du premier document à télécharge (0 par défaut", 0)
   .option('-s, --size [size]', "Quantité de documents à télécharger", 10)
