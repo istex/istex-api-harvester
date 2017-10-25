@@ -1,6 +1,6 @@
 {
   "name": "istex-api-harvester",
-  "version": "2.6.1",
+  "version": "2.7.0",
   "description": "Programme écrit en NodeJS permettant de moissonner les corpus proposés par l'API de la plateforme ISTEX.",
   "preferGlobal": "true",
   "main": "istex-api-harvester.njs",
@@ -15,6 +15,10 @@
     {
       "name": "Claude Niederlender",
       "email": "claude.niederlender@gmail.com"
+    },
+    {
+      "name": "Francis Bondo",
+      "email": "francis.bondo@inist.fr"
     }
   ],
   "license": "BSD",
