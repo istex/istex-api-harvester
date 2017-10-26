@@ -14,8 +14,9 @@ program
   .version(package.version)
   .option('-q, --query [requete]', "La requete (?q=) ", '*')
   .option('-t, --scroll [scroll]', "durée de vie d'un ensemble de réponses pour un parcours de type \"scroll\" pour les parcours / extractions de gros ensembles (\"30s\" par défaut)", "30s")
+  .option('-T, --scrollId [scrollId]', "identifiant de session de scroll pour poursuivre un parcours de résultats", "")
   .option('-c, --corpus [corpus]', "Le corpus souhaité (ex: springer, ecco, ...)", 'istex')
-  .option('-B, --bearer [token]', "Le token à utiliser pour l'authentification", 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ')
+  .option('-j, --jwt [token]', "Le token à utiliser pour l'authentification", 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ')
   .option('-f, --from [startingResult]', "rang du premier document à télécharge (0 par défaut", 0)
   .option('-s, --size [size]', "Quantité de documents à télécharger", 10)
   .option('-M, --metadata [formats]', "Pour retourner seulement certain formats de metadata (ex: mods,xml)", "all")
@@ -139,6 +140,7 @@ function downloadPage(range, cb, cbBody) {
   else {
     url += '&from=' + range[0];
   }
+  if (program.scrollId !== "") url += '&scrollId=' + program.scrollId;
   if (scrollId) url += '&scrollId=' + scrollId;
   if (program.sortby !== "") url += '&sortBy=' + program.sortby;
   if (program.rankby !== "") url += '&rankBy=' + program.rankby;

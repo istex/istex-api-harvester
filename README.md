@@ -32,8 +32,9 @@ npm install -g istex-api-harvester
     -V, --version                output the version number
     -q, --query [requete]        La requete (?q=) 
     -c, --corpus [corpus]        Le corpus souhaité (ex: springer, ecco, ...)
-    -B, --bearer [token]         Le token (crée avec des attributs de l'utilisateur via la fédération d'identités) utilisé pour l'authentification
+    -j, --jwt [token]            Le token (crée avec des attributs de l'utilisateur via la fédération d'identités) utilisé pour l'authentification
     -t, --scroll [scroll]        durée de vie d'un ensemble de réponses pour un parcours de type "scroll" pour les parcours / extractions de gros ensembles ("30s" par défaut)
+    -T, --scrollId [scrollId]    identifiant de session de scroll pour poursuivre un parcours de résultats"
     -f, --from [startingResult]  rang du premier document à télécharge (0 par défaut)
     -s, --size [size]            Quantité de documents à télécharger
     -M, --metadata [formats]     Pour retourner seulement certain formats de metadata (ex: mods,xml)
