@@ -150,10 +150,9 @@ function downloadPage(range, cb, cbBody) {
 
   // to ignore bad https certificate
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
   prepareHttpGetRequest(url)
     .auth(program.username, program.password)
-    .set('Authorization', 'Bearer ' + program.bearer)
+    .set('Authorization', 'Bearer ' + program.jwt)
     .end(function (err, res) {
       if (err) {
         console.log('ERROR intern: ', err);
@@ -185,10 +184,9 @@ function downloadPage(range, cb, cbBody) {
         // récupération de la liste des opérations
         // de téléchargement des métadonnées
         item1.metadata && item1.metadata.forEach(function (meta) {
-
           // ajoute également le  sid dans le téléchargement de la metadonnées
           meta.uri += '?sid=istex-api-harvester';
-          if (program.bearer != 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
+          if (program.jwt != 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
             meta.uri += '&auth=jwt';
           }
 
@@ -220,10 +218,10 @@ function downloadPage(range, cb, cbBody) {
                 if (meta.mimetype === 'application/json') {
                     meta.uri = meta.uri.replace('metadata/json','');
                 }
-
+                
                 var req = {};
-                if (program.bearer != 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
-                  req = prepareHttpGetRequest(meta.uri).set('Authorization', 'Bearer ' + program.bearer);
+                if (program.jwt != 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
+                  req = prepareHttpGetRequest(meta.uri).set('Authorization', 'Bearer ' + program.jwt);
                 }
                 else{
                   req = prepareHttpGetRequest(meta.uri).auth(program.username, program.password);
@@ -244,7 +242,7 @@ function downloadPage(range, cb, cbBody) {
 
           // ajoute également le sid dans le téléchargement du fulltext
           ft.uri += '?sid=istex-api-harvester';
-          if (program.bearer != 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
+          if (program.jwt != 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
             ft.uri += '&auth=jwt';
           }
 
@@ -276,8 +274,8 @@ function downloadPage(range, cb, cbBody) {
                   + (ft.mimetype.indexOf(ft.extension) === -1 ? ft.extension + '.' : '')
                   + ft.mimetype.split('/').pop().replace('+', '.')));
                 var req = {};
-                if (program.bearer != 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
-                  req = prepareHttpGetRequest(ft.uri).set('Authorization', 'Bearer ' + program.bearer);
+                if (program.jwt != 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
+                  req = prepareHttpGetRequest(ft.uri).set('Authorization', 'Bearer ' + program.jwt);
                 }
                 else{
                   req = prepareHttpGetRequest(ft.uri).auth(program.username, program.password);
@@ -323,12 +321,12 @@ function checkIfAuthNeeded(program, cb) {
   // dans le cas contraire, avant de demander un login/mdp 
   // on vérifie si par hasard on n'est pas déjà autorisé (par IP)
   var url = prefixUrl + '/auth'; // document protégé
-  if (program.bearer != 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
+  if (program.jwt != 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
     url += '?auth=jwt';
   }
   prepareHttpGetRequest(url)
     .auth(program.username, program.password)
-    .set('Authorization', 'Bearer ' + program.bearer)
+    .set('Authorization', 'Bearer ' + program.jwt)
     .end(function (err, res) {
       if (err) {
         return cb(new Error(err));
@@ -374,7 +372,7 @@ function askLoginPassword(cb) {
     var url = prefixUrl + '/corpus/';
     prepareHttpGetRequest(url)
       .auth(program.username, program.password)
-      .set('Authorization', 'Bearer ' + program.bearer)
+      .set('Authorization', 'Bearer ' + program.jwt)
       .end(function (err, res) {
         if (err) {
           return cb(new Error(err));
