@@ -31,7 +31,9 @@ program
   .option('-o, --output [outputDir]', "répertoire de destination (output ou nom de corpus si précisé)", "output")
   .parse(process.argv);
 
-var prefixUrl = (program.host !== "") ? "https://" + program.host : "https://api.istex.fr";
+var prefixUrl = (program.host !== "") ? "http://" + program.host : "https://api.istex.fr";
+if (program.host !== "" && !program.host.match(/.*:[0-9]+$/)) prefixUrl = "https://" + program.host;
+console.log("Trying to crawl ISTEX API with base URL "+prefixUrl);
 
 var dstPath = path.join(process.cwd(), program.output);
 mkdirp.sync(dstPath);
