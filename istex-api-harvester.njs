@@ -27,6 +27,7 @@ program
   .option('-H, --host [host:port]', "interrogation sur un hostname (ou @IP) particulier", "")
   .option('-b, --sortby [sortMode]', "tri sur un ou plusieurs champ", "")
   .option('-r, --rankby [rankMode]', "mode de ranking", "")
+  .option('-R, --randomSeed [randomSeed]', "racine de tri aléatoire", "")
   .option('-w, --workers [nbWorkers]', "nombre de workers fonctionnant en parallèle (permet de télécharger plusieurs pages simultanément)", 1)
   .option('-o, --output [outputDir]', "répertoire de destination (output ou nom de corpus si précisé)", "output")
   .parse(process.argv);
@@ -40,6 +41,7 @@ mkdirp.sync(dstPath);
 var zipName = path.join(process.cwd(), uuid.v1() + '.zip');
 
 var randomSeed = (new Date()).getTime();
+if (program.randomSeed && program.randomSeed !== "") randomSeed = program.randomSeed;
 
 var scrollId = '';
 // les paramètres metadata et fulltext peuvent contenir
