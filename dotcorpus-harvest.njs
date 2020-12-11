@@ -8,8 +8,6 @@ const async = require('async');
 const fs = require('fs');
 const es = require('event-stream');
 const prompt = require('prompt');
-// const dateformat = require('dateformat');
-// const agent = request.agent();
 const jsonPackage = require('./package.json');
 const cliProgress = require('cli-progress');
 const readline = require('readline');
@@ -17,9 +15,9 @@ const readline = require('readline');
 program
   .version(jsonPackage.version)
   .option('-d, --dotcorpus [dotcorpus path]', "Path du fichier dotcorpus", '.corpus')
-  .option('-j, --jwt [token]', "Le token à utiliser pour l'authentification", 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ')
+  .option('-j, --jwt [token]', "Le token à utiliser pour l'authentification", '')
   .option('-o, --output [outputdir path]', "Répertoire où seront téléchargés les fichiers", "out")
-  .option('-M, --metadata [formats]', "Pour retourner seulement certain formats de metadata (ex: mods,xml)", "all")
+  .option('-M, --metadata [formats]', "Pour retourner seulement certain formats de metadata (ex: mods,xml)", "")
   .option('-F, --fulltext [formats]', "Pour retourner seulement certain formats de plein text (ex: tei,pdf)", "")
   .option('-w, --workers [nbWorkers]', "nombre de workers fonctionnant en parallèle (permet de télécharger plusieurs pages simultanément)", 1)
   .option('-H, --host [host:port]', "interrogation sur un hostname (ou @IP) particulier", "")
@@ -35,6 +33,19 @@ const prefixUrl = (program.host !== "") ? "http://" + program.host : "https://ap
 const dotCorpusPath = (program.dotcorpus && program.dotcorpus !== '') ? program.dotcorpus : ".corpus";
 const outputDir = (program.output && program.output !== '') ? program.output : "./out";
 
+// les paramètres metadata et fulltext peuvent contenir
+// une liste de valeurs séparées par des virgules
+program.metadata = program.metadata.split(',').filter(function (elt) {
+  return elt !== '';
+});
+program.fulltext = program.fulltext.split(',').filter(function (elt) {
+  return elt !== '';
+});
+
+const cursorPath = path.join(outputDir,'.cursor');
+let cursor;
+
+
 /**
  * Point d'entrée
  * - vérifie si authentification nécessaire
@@ -42,6 +53,28 @@ const outputDir = (program.output && program.output !== '') ? program.output : "
  * - lance le téléchargement
  */
 let startJob = function () {
+
+  // const dotcorpusName = path.basename(dotCorpusPath);
+  // const dotcorpusDLPath = path.join(outputDir,dotcorpusName);
+  if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir);
+
+  // if (fs.existsSync(dotCorpusPath) && !fs.existsSync(dotcorpusDLPath)) {
+  //   fs.copyFileSync(dotCorpusPath,dotcorpusDLPath);
+  // }
+
+  if (!fs.existsSync(cursorPath)) {
+    cursor = 0;
+    fs.writeFileSync(cursorPath,'0',{encoding:'utf8'});
+  } else {
+    const cursorString = fs.readFileSync(cursorPath,{encoding:'utf8'});
+    cursor = parseInt(cursorString);
+    if (isNaN(cursor)) {
+      console.error("Fichier .cursor incorrect, session de téléchargement corrompue. On s'arrête");
+      process.exit(0);
+    }
+  }
+
+
   checkIfAuthNeeded(program, function (err, needAuth) {
     if (err) return console.error(err);
     if (needAuth) {
@@ -55,43 +88,6 @@ let startJob = function () {
   });
 };
 
-if (fs.existsSync(outputDir)) {
-  rl.question("Répertoire "+outputDir+" déjà existant. Essayez-vous de reprendre un téléchargement interrompu ? ", (answer) => {
-      if (!['o','O','y','Y'].includes(answer)) {
-          console.log('Pour un nouveau téléchargement, veuillez choisir un autre emplacement.');
-          process.exit(1);
-      }
-      rl.close();
-      console.log('Tentative de reprise du téléchargement...');
-      startJob();
-  });
-} else {
-  startJob();
-}
-
-// const dotcorpusName = path.basename(dotCorpusPath);
-// const dotcorpusDLPath = path.join(outputDir,dotcorpusName);
-if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir);
-
-const cursorPath = path.join(outputDir,'.cursor');
-let cursor;
-
-// if (fs.existsSync(dotCorpusPath) && !fs.existsSync(dotcorpusDLPath)) {
-//   fs.copyFileSync(dotCorpusPath,dotcorpusDLPath);
-// }
-
-if (!fs.existsSync(cursorPath)) {
-  cursor = 0;
-  fs.writeFileSync(cursorPath,'0',{encoding:'utf8'});
-} else {
-  const cursorString = fs.readFileSync(cursorPath,{encoding:'utf8'});
-  cursor = parseInt(cursorString);
-  if (isNaN(cursor)) {
-    console.error("Fichier .cursor incorrect, session de téléchargement corrompue. On s'arrête");
-    process.exit(0);
-  }
-}
-
 
 let beforeIstexSection = true;
 let idType = '';
@@ -99,9 +95,8 @@ let bulk = [], total;
 const bulkSize = 50;
 
 let parseDotCorpus = function() {
-
   let indexNumber = 0;  
-  var s = fs.createReadStream(dotCorpusPath)
+  const s = fs.createReadStream(dotCorpusPath)
   .pipe(es.split())
   .pipe(es.mapSync(function(line) {
     const l = line.trim();
@@ -131,7 +126,7 @@ let parseDotCorpus = function() {
       if (indexNumber >= bulkSize) {
         harvestBulk((err)=> {
           if (err) console.error(err.message);
-          if (cursor <= total) {
+          if (cursor < total) {
             if (program.verbose) console.debug("resume stream (cursor="+cursor+")");
             s.resume();
           } else {
@@ -152,7 +147,7 @@ let parseDotCorpus = function() {
       console.log('Error while reading file.', err);
   })
   .on('end', function() {
-    console.log('dotcorpus file successfully read');
+    if (program.verbose) console.debug('dotcorpus file successfully read');
     if (bulk.length > 0) {
         harvestBulk(()=>{
           harvestEnded();
@@ -174,21 +169,11 @@ let harvestEnded = function() {
 // paramétrage de l'éventuel proxy http sortant
 // en passant par la variable d'environnement http_proxy
 require('superagent-proxy')(request);
-var httpProxy = process.env.http_proxy || '';
+const httpProxy = process.env.http_proxy || '';
 function prepareHttpGetRequest(url) {
-  var agent = request.agent();
+  const agent = request.agent();
   return httpProxy ? agent.get(url).proxy(httpProxy) : agent.get(url);
 }
-
-// les paramètres metadata et fulltext peuvent contenir
-// une liste de valeurs séparées par des virgules
-program.metadata = program.metadata.split(',').filter(function (elt) {
-  return elt !== '';
-});
-program.fulltext = program.fulltext.split(',').filter(function (elt) {
-  return elt !== '';
-});
-
 
 /**
  * Tentative de connexion à l'API pour vérifier si
@@ -197,18 +182,17 @@ program.fulltext = program.fulltext.split(',').filter(function (elt) {
 function checkIfAuthNeeded(program, cb) {
   // on ne cherche pas a authentifier si l'utilisateur ne demande
   // que des métadonnées non authentifiées (mods)
-  if (program.metadata.length === 1 && program.metadata[0] === 'mods' &&
-    program.fulltext.length === 0) {
+  const metas = program.metadata.filter(elem => !['mods','json'].includes(elem));
+  if (metas.length <= 0 && program.fulltext.length <= 0) {
     return cb(null, false);
   }
   // dans le cas contraire, avant de demander un login/mdp 
   // on vérifie si par hasard on n'est pas déjà autorisé (par IP)
   let url = prefixUrl + '/auth'; // document protégé
-  if (program.jwt !== 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
+  if (program.jwt !== '') {
     url += '?auth=jwt';
   }
   prepareHttpGetRequest(url)
-    .auth(program.username, program.password)
     .set('Authorization', 'Bearer ' + program.jwt)
     .end(function (err, res) {
       if (err) {
@@ -277,6 +261,8 @@ let harvestBulk = function(cbHarvestBulk) {
   // lancement des téléchargements en parallèle, dans la limite de 
   async.mapLimit(bulk, program.workers, function (docId, cbMapLimit) {
 
+    const downloadFunction = [];
+
     program.metadata.forEach(function (format) {
       // ajoute également le sid dans le téléchargement de la metadonnées
       let formatUri = prefixUrl;
@@ -288,7 +274,6 @@ let harvestBulk = function(cbHarvestBulk) {
       }
       if (program.verbose) console.log('try to dowload '+formatUri);
 
-      const downloadFunction = [];
 
       // ajoute une opération de téléchargement
       // pour chaque métadonnées souhaitées
@@ -314,10 +299,10 @@ let harvestBulk = function(cbHarvestBulk) {
           }
           
           let req = {};
-          if (program.jwt !== 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
+          if (program.jwt !== '') {
             req = prepareHttpGetRequest(formatUri).set('Authorization', 'Bearer ' + program.jwt);
           } else {
-            req = prepareHttpGetRequest(formatUri).auth(program.username, program.password);
+            req = prepareHttpGetRequest(formatUri);
           }
           req.pipe(stream);
           stream.on('finish', function () {
@@ -325,17 +310,14 @@ let harvestBulk = function(cbHarvestBulk) {
           });
           stream.on('error', callbackDlFn);
         });
-      
-      
-      });
-
-      // launch download all the metadata & fulltext files
-      async.series(downloadFunction, function (err) {
-        setTimeout(() => {
-          cbMapLimit(err);
-        }, 1);
-      });
-
+      });  
+    });
+    
+    // launch download all the metadata & fulltext files
+    async.series(downloadFunction, function (err) {
+      setTimeout(() => {
+        cbMapLimit(err);
+      }, 1);
     });
 
   }, function (err) {
@@ -348,3 +330,18 @@ let harvestBulk = function(cbHarvestBulk) {
   });
 
 };
+
+if (fs.existsSync(outputDir)) {
+  rl.question("Répertoire "+outputDir+" déjà existant. Essayez-vous de reprendre un téléchargement interrompu ? ", (answer) => {
+      if (!['o','O','y','Y'].includes(answer)) {
+          console.log('Pour un nouveau téléchargement, veuillez choisir un autre emplacement.');
+          process.exit(1);
+      }
+      rl.close();
+      console.log('Tentative de reprise du téléchargement...');
+      startJob();
+  });
+} else {
+  startJob();
+}
+
