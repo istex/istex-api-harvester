@@ -95,8 +95,8 @@ if (!fs.existsSync(cursorPath)) {
 
 let beforeIstexSection = true;
 let idType = '';
-let bulk = [];
-const bulkSize = 30;
+let bulk = [], total;
+const bulkSize = 50;
 
 let parseDotCorpus = function() {
 
@@ -106,9 +106,8 @@ let parseDotCorpus = function() {
   .pipe(es.mapSync(function(line) {
     const l = line.trim();
     if (beforeIstexSection) {
-      // console.log('before');
       if (l.startsWith('total')) {
-        const total = parseInt(l.match(/\d+/));
+        total = parseInt(l.match(/\d+/));
         console.info("Nb de documents à télécharger : "+total);
         progressBar.start(total, 0);
       }
@@ -121,7 +120,6 @@ let parseDotCorpus = function() {
           indexNumber++;
         }
       } else if (l.startsWith('ark ')) {
-        // ark:/67375/HXZ-Q66QJ1BH-0
         const matches = l.match(/ark:\/67375\/[0-9A-Z]{3}-[0-9A-Z]{8}-[0-9A-Z]/);
         if (matches !== null && matches.length > 0) {
           bulk.push(matches[0]);
@@ -133,9 +131,14 @@ let parseDotCorpus = function() {
       if (indexNumber >= bulkSize) {
         harvestBulk((err)=> {
           if (err) console.error(err.message);
-          s.resume();
+          if (cursor <= total) {
+            if (program.verbose) console.debug("resume stream (cursor="+cursor+")");
+            s.resume();
+          } else {
+            s.end();
+          }
         });
-        if (program.verbose) console.debug("pause input stream");
+        if (program.verbose) console.debug("pause stream (cursor="+cursor+")");
         s.pause();
       }
     }
@@ -149,17 +152,23 @@ let parseDotCorpus = function() {
       console.log('Error while reading file.', err);
   })
   .on('end', function() {
+    console.log('dotcorpus file successfully read');
     if (bulk.length > 0) {
         harvestBulk(()=>{
-          progressBar.stop();
-          console.info("moissonnage terminé.");
-          process.exit(0)  ;
+          harvestEnded();
       });
+    } else {
+      harvestEnded();
     }
-    console.log('Read entire file.');
   })
   );
 
+};
+
+let harvestEnded = function() {
+  progressBar.stop();
+  console.info("moissonnage terminé.");
+  process.exit(0);
 };
 
 // paramétrage de l'éventuel proxy http sortant
@@ -320,10 +329,8 @@ let harvestBulk = function(cbHarvestBulk) {
       
       });
 
-      // download the metadata and the fulltext
+      // launch download all the metadata & fulltext files
       async.series(downloadFunction, function (err) {
-        // MODS and fulltext downloaded
-        if (program.verbose) process.stdout.write('.');
         setTimeout(() => {
           cbMapLimit(err);
         }, 1);
