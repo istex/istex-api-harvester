@@ -7,11 +7,11 @@ const path = require('path');
 const async = require('async');
 const fs = require('fs');
 const es = require('event-stream');
-var prompt = require('prompt');
+const prompt = require('prompt');
 // const dateformat = require('dateformat');
 // const agent = request.agent();
 const jsonPackage = require('./package.json');
-// const cliProgress = require('cli-progress');
+const cliProgress = require('cli-progress');
 const readline = require('readline');
 
 program
@@ -30,8 +30,8 @@ const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 });
-
-var prefixUrl = (program.host !== "") ? "http://" + program.host : "https://api.istex.fr";
+const progressBar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+const prefixUrl = (program.host !== "") ? "http://" + program.host : "https://api.istex.fr";
 const dotCorpusPath = (program.dotcorpus && program.dotcorpus !== '') ? program.dotcorpus : ".corpus";
 const outputDir = (program.output && program.output !== '') ? program.output : "./out";
 
@@ -103,11 +103,16 @@ let parseDotCorpus = function() {
   let indexNumber = 0;  
   var s = fs.createReadStream(dotCorpusPath)
   .pipe(es.split())
-  .pipe(es.mapSync(function(line){
+  .pipe(es.mapSync(function(line) {
+    const l = line.trim();
     if (beforeIstexSection) {
       // console.log('before');
+      if (l.startsWith('total')) {
+        const total = parseInt(l.match(/\d+/));
+        console.info("Nb de documents à télécharger : "+total);
+        progressBar.start(total, 0);
+      }
     } else {
-      const l = line.trim();
       if (l.startsWith('id ')) {
         const matches = l.match(/[0-9A-F]{40}/);
         if (matches !== null && matches.length > 0) {
@@ -130,6 +135,7 @@ let parseDotCorpus = function() {
           if (err) console.error(err.message);
           s.resume();
         });
+        if (program.verbose) console.debug("pause input stream");
         s.pause();
       }
     }
@@ -145,7 +151,9 @@ let parseDotCorpus = function() {
   .on('end', function() {
     if (bulk.length > 0) {
         harvestBulk(()=>{
-        process.exit(0)  ;
+          progressBar.stop();
+          console.info("moissonnage terminé.");
+          process.exit(0)  ;
       });
     }
     console.log('Read entire file.');
@@ -186,7 +194,7 @@ function checkIfAuthNeeded(program, cb) {
   }
   // dans le cas contraire, avant de demander un login/mdp 
   // on vérifie si par hasard on n'est pas déjà autorisé (par IP)
-  var url = prefixUrl + '/auth'; // document protégé
+  let url = prefixUrl + '/auth'; // document protégé
   if (program.jwt !== 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
     url += '?auth=jwt';
   }
@@ -235,7 +243,7 @@ function askLoginPassword(cb) {
     // then try to auth
     program.username = results.username;
     program.password = results.password;
-    var url = prefixUrl + '/corpus/';
+    let url = prefixUrl + '/corpus/';
     prepareHttpGetRequest(url)
       .auth(program.username, program.password)
       .set('Authorization', 'Bearer ' + program.jwt)
@@ -288,7 +296,7 @@ let harvestBulk = function(cbHarvestBulk) {
           let docName = (idType === 'istex') ? docId : docId.substring(5).replace('/','_');
           docName += '.metadata.' + format;
           if (['mods','tei'].includes(format)) docName += ".xml";
-          var stream = fs.createWriteStream(path.join(outputDir, subFolders, docName));
+          const stream = fs.createWriteStream(path.join(outputDir, subFolders, docName));
 
           //Contourner la redirection du /document/idIstex/metadata/json vers document/idIstex
           //Car on a par ex: un fichier Json contenant : "Found. Redirecting to /document/idIstex"
@@ -296,10 +304,10 @@ let harvestBulk = function(cbHarvestBulk) {
               formatUri = formatUri.replace('metadata/json','');
           }
           
-          var req = {};
+          let req = {};
           if (program.jwt !== 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
             req = prepareHttpGetRequest(formatUri).set('Authorization', 'Bearer ' + program.jwt);
-          }else{
+          } else {
             req = prepareHttpGetRequest(formatUri).auth(program.username, program.password);
           }
           req.pipe(stream);
@@ -315,18 +323,20 @@ let harvestBulk = function(cbHarvestBulk) {
       // download the metadata and the fulltext
       async.series(downloadFunction, function (err) {
         // MODS and fulltext downloaded
-        process.stdout.write('.');
+        if (program.verbose) process.stdout.write('.');
         setTimeout(() => {
-          
           cbMapLimit(err);
-        }, 3000);
+        }, 1);
       });
 
     });
 
   }, function (err) {
     if (err) return console.error(err);
-    console.log('bulk courant terminé');
+    cursor += bulk.length;
+    progressBar.update(cursor);
+    bulk=[];
+    if (program.verbose) console.debug('bulk courant terminé');
     cbHarvestBulk(err);
   });
 
