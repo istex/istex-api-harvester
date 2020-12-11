@@ -92,7 +92,8 @@ let startJob = function () {
 let beforeIstexSection = true;
 let idType = '';
 let bulk = [], total;
-const bulkSize = 50;
+let identifierIndex = 0;
+const bulkSize = 25;
 
 let parseDotCorpus = function() {
   let indexNumber = 0;  
@@ -112,6 +113,7 @@ let parseDotCorpus = function() {
         if (matches !== null && matches.length > 0) {
           bulk.push(matches[0]);
           idType='istex';
+          identifierIndex++;
           indexNumber++;
         }
       } else if (l.startsWith('ark ')) {
@@ -119,11 +121,15 @@ let parseDotCorpus = function() {
         if (matches !== null && matches.length > 0) {
           bulk.push(matches[0]);
           idType='ark';
+          identifierIndex++;
           indexNumber++;
         }
       }
 
       if (indexNumber >= bulkSize) {
+        indexNumber = 0;
+        if (program.verbose) console.debug("pause stream (cursor="+cursor+")");
+        s.pause();
         harvestBulk((err)=> {
           if (err) console.error(err.message);
           if (cursor < total) {
@@ -133,8 +139,6 @@ let parseDotCorpus = function() {
             s.end();
           }
         });
-        if (program.verbose) console.debug("pause stream (cursor="+cursor+")");
-        s.pause();
       }
     }
 
@@ -163,7 +167,10 @@ let parseDotCorpus = function() {
 let harvestEnded = function() {
   progressBar.stop();
   console.info("moissonnage terminé.");
-  process.exit(0);
+  fs.writeFile(cursorPath,total,{encoding:'utf8'}, (err)=>{
+    if (err) console.error(err.message);
+    process.exit(0);
+  });
 };
 
 // paramétrage de l'éventuel proxy http sortant
@@ -258,6 +265,12 @@ function askLoginPassword(cb) {
 
 let harvestBulk = function(cbHarvestBulk) {
 
+  if (identifierIndex < cursor) {
+    if (program.verbose) console.debug('bulk déjà traité, on passe à la suite.');
+    bulk = [];
+    return cbHarvestBulk();
+  }
+
   // lancement des téléchargements en parallèle, dans la limite de 
   async.mapLimit(bulk, program.workers, function (docId, cbMapLimit) {
 
@@ -306,24 +319,24 @@ let harvestBulk = function(cbHarvestBulk) {
           }
           req.pipe(stream);
           stream.on('finish', function () {
+            progressBar.update(cursor);
             callbackDlFn(null);
           });
           stream.on('error', callbackDlFn);
         });
-      });  
+      });
     });
     
     // launch download all the metadata & fulltext files
     async.series(downloadFunction, function (err) {
-      setTimeout(() => {
+      fs.writeFile(cursorPath,Math.trunc(cursor / bulkSize) * bulkSize,{encoding:'utf8'}, (err)=>{
         cbMapLimit(err);
-      }, 1);
+      });
     });
 
-  }, function (err) {
+  } , function (err) {
     if (err) return console.error(err);
     cursor += bulk.length;
-    progressBar.update(cursor);
     bulk=[];
     if (program.verbose) console.debug('bulk courant terminé');
     cbHarvestBulk(err);
