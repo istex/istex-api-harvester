@@ -35,6 +35,26 @@ var prefixUrl = (program.host !== "") ? "http://" + program.host : "https://api.
 const dotCorpusPath = (program.dotcorpus && program.dotcorpus !== '') ? program.dotcorpus : ".corpus";
 const outputDir = (program.output && program.output !== '') ? program.output : "./out";
 
+/**
+ * Point d'entrée
+ * - vérifie si authentification nécessaire
+ * - demande le login/password si nécessaire
+ * - lance le téléchargement
+ */
+let startJob = function () {
+  checkIfAuthNeeded(program, function (err, needAuth) {
+    if (err) return console.error(err);
+    if (needAuth) {
+      askLoginPassword(function (err) {
+        if (err) return new Error(err);
+        parseDotCorpus();
+      });
+    } else {
+      parseDotCorpus();
+    }
+  });
+};
+
 if (fs.existsSync(outputDir)) {
   rl.question("Répertoire "+outputDir+" déjà existant. Essayez-vous de reprendre un téléchargement interrompu ? ", (answer) => {
       if (!['o','O','y','Y'].includes(answer)) {
@@ -43,24 +63,10 @@ if (fs.existsSync(outputDir)) {
       }
       rl.close();
       console.log('Tentative de reprise du téléchargement...');
-      /**
-       * Point d'entrée
-       * - vérifie si authentification nécessaire
-       * - demande le login/password si nécessaire
-       * - lance le téléchargement
-       */
-      checkIfAuthNeeded(program, function (err, needAuth) {
-        if (err) return console.error(err);
-        if (needAuth) {
-          askLoginPassword(function (err) {
-            if (err) return new Error(err);
-            parseDotCorpus();
-          });
-        } else {
-          parseDotCorpus();
-        }
-      });
+      startJob();
   });
+} else {
+  startJob();
 }
 
 // const dotcorpusName = path.basename(dotCorpusPath);
@@ -90,7 +96,7 @@ if (!fs.existsSync(cursorPath)) {
 let beforeIstexSection = true;
 let idType = '';
 let bulk = [];
-const bulkSize = 500;
+const bulkSize = 30;
 
 let parseDotCorpus = function() {
 
@@ -310,7 +316,10 @@ let harvestBulk = function(cbHarvestBulk) {
       async.series(downloadFunction, function (err) {
         // MODS and fulltext downloaded
         process.stdout.write('.');
-        cbMapLimit(err);
+        setTimeout(() => {
+          
+          cbMapLimit(err);
+        }, 3000);
       });
 
     });
