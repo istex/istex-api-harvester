@@ -28,7 +28,7 @@ const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 });
-const progressBar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+const progressBar = new cliProgress.SingleBar({etaBuffer:50}, cliProgress.Presets.shades_classic);
 const prefixUrl = (program.host !== "") ? "http://" + program.host : "https://api.istex.fr";
 const dotCorpusPath = (program.dotcorpus && program.dotcorpus !== '') ? program.dotcorpus : ".corpus";
 const outputDir = (program.output && program.output !== '') ? program.output : "./out";
@@ -87,7 +87,7 @@ let beforeIstexSection = true;
 let idType = '';
 let bulk = [], total;
 let identifierIndex = 0;
-const bulkSize = 25;
+const bulkSize = 100;
 
 let parseDotCorpus = function() {
   let indexNumber = 0;  
@@ -263,8 +263,11 @@ function askLoginPassword(cb) {
 
 let harvestBulk = function(dotCorpusStream,cbHarvestBulk) {
 
+  let i=0;
+
   // lancement des téléchargements en parallèle, dans la limite de 
   async.mapLimit(bulk, program.workers, function (docId, cbMapLimit) {
+    i++;
 
     const downloadFunction = [];
 
@@ -311,7 +314,8 @@ let harvestBulk = function(dotCorpusStream,cbHarvestBulk) {
           }
           req.pipe(stream);
           stream.on('finish', function () {
-            progressBar.update(cursor);
+            // console.log('update progressBar with value:'+(cursor+i));
+            if ((cursor + i) > progressBar.value) progressBar.update(cursor+i);
             callbackDlFn(null);
           });
           stream.on('error', callbackDlFn);
