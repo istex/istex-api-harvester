@@ -54,13 +54,7 @@ let cursor;
  */
 let startJob = function () {
 
-  // const dotcorpusName = path.basename(dotCorpusPath);
-  // const dotcorpusDLPath = path.join(outputDir,dotcorpusName);
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir);
-
-  // if (fs.existsSync(dotCorpusPath) && !fs.existsSync(dotcorpusDLPath)) {
-  //   fs.copyFileSync(dotCorpusPath,dotcorpusDLPath);
-  // }
 
   if (!fs.existsSync(cursorPath)) {
     cursor = 0;
@@ -97,7 +91,7 @@ const bulkSize = 25;
 
 let parseDotCorpus = function() {
   let indexNumber = 0;  
-  const s = fs.createReadStream(dotCorpusPath)
+  const dcFileStream = fs.createReadStream(dotCorpusPath)
   .pipe(es.split())
   .pipe(es.mapSync(function(line) {
     const l = line.trim();
@@ -125,20 +119,23 @@ let parseDotCorpus = function() {
           indexNumber++;
         }
       }
-
-      if (indexNumber >= bulkSize) {
+      if (indexNumber >= bulkSize || identifierIndex === total) {
         indexNumber = 0;
-        if (program.verbose) console.debug("pause stream (cursor="+cursor+")");
-        s.pause();
-        harvestBulk((err)=> {
-          if (err) console.error(err.message);
-          if (cursor < total) {
-            if (program.verbose) console.debug("resume stream (cursor="+cursor+")");
-            s.resume();
-          } else {
-            s.end();
-          }
-        });
+        if (identifierIndex > cursor) {
+          if (program.verbose) console.debug(identifierIndex+","+cursor+' : bulk non traité',cursor);
+          if (program.verbose) console.debug("pause stream (cursor="+cursor+")");
+          dcFileStream.pause();
+          harvestBulk(dcFileStream, (err)=> {
+            if (err) console.error(err.message);
+            if (cursor >= total) {
+              if (program.verbose) console.debug("end stream (cursor="+cursor+")");
+              dcFileStream.end();
+            }
+          });
+        } else {
+          if (program.verbose) console.debug(identifierIndex+","+cursor+' : bulk déjà traité, on passe à la suite.');
+          bulk = [];
+        }
       }
     }
 
@@ -151,9 +148,10 @@ let parseDotCorpus = function() {
       console.log('Error while reading file.', err);
   })
   .on('end', function() {
-    if (program.verbose) console.debug('dotcorpus file successfully read');
+    if (program.verbose) console.debug('dotcorpus file successfully read (bulk length = '+bulk.length+')');
     if (bulk.length > 0) {
-        harvestBulk(()=>{
+      console.log("end");
+        harvestBulk(dcFileStream,()=>{
           harvestEnded();
       });
     } else {
@@ -263,13 +261,7 @@ function askLoginPassword(cb) {
 }
 
 
-let harvestBulk = function(cbHarvestBulk) {
-
-  if (identifierIndex < cursor) {
-    if (program.verbose) console.debug('bulk déjà traité, on passe à la suite.');
-    bulk = [];
-    return cbHarvestBulk();
-  }
+let harvestBulk = function(dotCorpusStream,cbHarvestBulk) {
 
   // lancement des téléchargements en parallèle, dans la limite de 
   async.mapLimit(bulk, program.workers, function (docId, cbMapLimit) {
@@ -285,7 +277,7 @@ let harvestBulk = function(cbHarvestBulk) {
       if (program.jwt !== 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
         formatUri += '&auth=jwt';
       }
-      if (program.verbose) console.log('try to dowload '+formatUri);
+      // if (program.verbose) console.log('try to dowload '+formatUri);
 
 
       // ajoute une opération de téléchargement
@@ -328,17 +320,19 @@ let harvestBulk = function(cbHarvestBulk) {
     });
     
     // launch download all the metadata & fulltext files
-    async.series(downloadFunction, function (err) {
-      fs.writeFile(cursorPath,Math.trunc(cursor / bulkSize) * bulkSize,{encoding:'utf8'}, (err)=>{
-        cbMapLimit(err);
+    async.series(downloadFunction, function (dlErr) {
+      if (dlErr) console.error(dlErr);
+      fs.writeFile(cursorPath,Math.trunc(cursor / bulkSize -1) * bulkSize,{encoding:'utf8'}, (errWrite)=>{
+        cbMapLimit(errWrite);
       });
     });
 
   } , function (err) {
     if (err) return console.error(err);
+    dotCorpusStream.resume();
     cursor += bulk.length;
     bulk=[];
-    if (program.verbose) console.debug('bulk courant terminé');
+    if (program.verbose) console.debug('bulk courant terminé (cursor='+cursor+')');
     cbHarvestBulk(err);
   });
 
