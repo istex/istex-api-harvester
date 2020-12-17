@@ -180,7 +180,7 @@ require('superagent-proxy')(request);
 const httpProxy = process.env.http_proxy || '';
 function prepareHttpGetRequest(url) {
   const agent = request.agent();
-  return httpProxy ? agent.get(url).proxy(httpProxy) : agent.get(url);
+  return httpProxy ? agent.get(url).proxy(httpProxy).redirects(0) : agent.get(url).redirects(0);
 }
 
 /**
@@ -203,6 +203,13 @@ function checkIfAuthNeeded(program, cb) {
   prepareHttpGetRequest(url)
     .set('Authorization', 'Bearer ' + program.jwt)
     .end(function (err, res) {
+      if (res.statusCode === 302 && res.header.location.endsWith('api.istex.fr/auth')) {
+        console.error("Vous avez demandé un format de fichier nécessitant authentification mais n'êtes pas authentifié.");
+        console.error("Pour plus d'informations, ouvrez la page https://api.istex.fr/auth dans votre navigateur.");
+        console.error("Pour vous authentifier par fédération d'identités, merci de renseigner un token JWT obtenu via https://api.istex.fr/token/");
+        console.error("Si nécessaire, envoyer un message à contact@listes.istex.fr");
+        process.exit(1);
+      }
       if (err) {
         return cb(new Error(err));
       }
