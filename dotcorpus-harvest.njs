@@ -86,11 +86,11 @@ let startJob = function () {
 let beforeIstexSection = true;
 let idType = '';
 let bulk = [], total;
-let identifierIndex = 0;
+let identifierGlobalIndex = 0;
 const bulkSize = 100;
 
 let parseDotCorpus = function() {
-  let indexNumber = 0;  
+  let bulkIndex = 0;  
   const dcFileStream = fs.createReadStream(dotCorpusPath)
   .pipe(es.split())
   .pipe(es.mapSync(function(line) {
@@ -107,33 +107,35 @@ let parseDotCorpus = function() {
         if (matches !== null && matches.length > 0) {
           bulk.push(matches[0]);
           idType='istex';
-          identifierIndex++;
-          indexNumber++;
+          identifierGlobalIndex++;
+          bulkIndex++;
         }
       } else if (l.startsWith('ark ')) {
         const matches = l.match(/ark:\/67375\/[0-9A-Z]{3}-[0-9A-Z]{8}-[0-9A-Z]/);
         if (matches !== null && matches.length > 0) {
           bulk.push(matches[0]);
           idType='ark';
-          identifierIndex++;
-          indexNumber++;
+          identifierGlobalIndex++;
+          bulkIndex++;
         }
       }
-      if (indexNumber >= bulkSize || identifierIndex === total) {
-        indexNumber = 0;
-        if (identifierIndex > cursor) {
-          if (program.verbose) console.debug(identifierIndex+","+cursor+' : bulk non traité',cursor);
-          if (program.verbose) console.debug("pause stream (cursor="+cursor+")");
+      if (bulkIndex >= bulkSize || identifierGlobalIndex === total) {
+        bulkIndex = 0;
+        if (identifierGlobalIndex > cursor) {
+          if (program.verbose) console.debug(identifierGlobalIndex+","+cursor+' : bulk non traité',cursor);
+          if (program.verbose) console.debug("pause stream (cursor="+cursor+", bulk size="+bulk.length+")");
           dcFileStream.pause();
-          harvestBulk(dcFileStream, (err)=> {
+          harvestBulk([...bulk],dcFileStream, (err)=> {
+            // use spread operator syntax to clone bulk array
             if (err) console.error(err.message);
             if (cursor >= total) {
-              if (program.verbose) console.debug("end stream (cursor="+cursor+")");
+              if (program.verbose) console.debug("end stream (cursor="+cursor+", bulk size="+bulk.length+")");
               dcFileStream.end();
             }
           });
+          bulk=[];
         } else {
-          if (program.verbose) console.debug(identifierIndex+","+cursor+' : bulk déjà traité, on passe à la suite.');
+          if (program.verbose) console.debug(identifierGlobalIndex+","+cursor+' : bulk déjà traité, on passe à la suite.');
           bulk = [];
         }
       }
@@ -151,9 +153,10 @@ let parseDotCorpus = function() {
     if (program.verbose) console.debug('dotcorpus file successfully read (bulk length = '+bulk.length+')');
     if (bulk.length > 0) {
       console.log("end");
-        harvestBulk(dcFileStream,()=>{
+        harvestBulk([...bulk],dcFileStream,()=>{
           harvestEnded();
       });
+      bulk=[];
     } else {
       harvestEnded();
     }
@@ -261,66 +264,23 @@ function askLoginPassword(cb) {
 }
 
 
-let harvestBulk = function(dotCorpusStream,cbHarvestBulk) {
+let harvestBulk = function(currentBulk,dotCorpusStream,cbHarvestBulk) {
 
-  let i=0;
+  let idxBulk=0;
 
   // lancement des téléchargements en parallèle, dans la limite de 
-  async.mapLimit(bulk, program.workers, function (docId, cbMapLimit) {
-    i++;
+  async.mapLimit(currentBulk, program.workers, function (docId, cbMapLimit) {
+    idxBulk++;
+    const progressIndex = cursor+idxBulk;
 
     const downloadFunction = [];
 
     program.metadata.forEach(function (format) {
-      // ajoute également le sid dans le téléchargement de la metadonnées
-      let formatUri = prefixUrl;
-      if (idType === 'istex') formatUri += '/document/'+docId+'/metadata/'+format;
-      if (idType === 'ark') formatUri += '/'+docId+'/record.'+format;
-      formatUri += '?sid=istex-api-harvester';
-      if (program.jwt !== 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
-        formatUri += '&auth=jwt';
-      }
-      // if (program.verbose) console.log('try to dowload '+formatUri);
+      fillDownloadArray(downloadFunction, docId, progressIndex, 'metadata', format);
+    });
 
-
-      // ajoute une opération de téléchargement
-      // pour chaque métadonnées souhaitées
-      downloadFunction.push(function (callbackDlFn) {
-        // ventilation dans une arborescence à 3 niveaux
-        const subId = (idType === 'istex') ? docId : docId.substring(15);
-        const subFolders = path.join(subId[0], subId[1], subId[2]);
-
-        fs.mkdir(path.join(outputDir, subFolders), {recursive:true}, function (err) {
-          if (err) {
-            console.error("Error creating directory " + path.join(outputDir, subFolders));
-            callbackDlFn(err);
-          }
-          let docName = (idType === 'istex') ? docId : docId.substring(5).replace('/','_');
-          docName += '.metadata.' + format;
-          if (['mods','tei'].includes(format)) docName += ".xml";
-          const stream = fs.createWriteStream(path.join(outputDir, subFolders, docName));
-
-          //Contourner la redirection du /document/idIstex/metadata/json vers document/idIstex
-          //Car on a par ex: un fichier Json contenant : "Found. Redirecting to /document/idIstex"
-          if (format === 'json') {
-              formatUri = formatUri.replace('metadata/json','');
-          }
-          
-          let req = {};
-          if (program.jwt !== '') {
-            req = prepareHttpGetRequest(formatUri).set('Authorization', 'Bearer ' + program.jwt);
-          } else {
-            req = prepareHttpGetRequest(formatUri);
-          }
-          req.pipe(stream);
-          stream.on('finish', function () {
-            // console.log('update progressBar with value:'+(cursor+i));
-            if ((cursor + i) > progressBar.value) progressBar.update(cursor+i);
-            callbackDlFn(null);
-          });
-          stream.on('error', callbackDlFn);
-        });
-      });
+    program.fulltext.forEach(function (format) {
+      fillDownloadArray(downloadFunction, docId, progressIndex, 'fulltext', format);
     });
     
     // launch download all the metadata & fulltext files
@@ -334,13 +294,66 @@ let harvestBulk = function(dotCorpusStream,cbHarvestBulk) {
   } , function (err) {
     if (err) return console.error(err);
     dotCorpusStream.resume();
-    cursor += bulk.length;
-    bulk=[];
-    if (program.verbose) console.debug('bulk courant terminé (cursor='+cursor+')');
+    cursor += currentBulk.length;
+    if (program.verbose) {
+      console.debug('bulk courant terminé (cursor='+cursor+')');}
     cbHarvestBulk(err);
   });
 
 };
+
+let fillDownloadArray = function(downloadArray, docId, progressIdx, formatType, format) {
+
+  // ajoute également le sid dans le téléchargement de la metadonnées
+  let formatUri = prefixUrl;
+  if (idType === 'istex') formatUri += '/document/'+docId+'/'+formatType+'/'+format;
+  const arkSubRoute = (formatType === 'metadata') ? 'record' : 'fulltext';
+  if (idType === 'ark') formatUri += '/'+docId+'/'+arkSubRoute+'.'+format;
+  formatUri += '?sid=istex-api-harvester';
+  if (program.jwt !== 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
+    formatUri += '&auth=jwt';
+  }
+
+  // ajoute une opération de téléchargement
+  // pour chaque métadonnée ou fulltext souhaité
+  downloadArray.push(function (callbackDlFn) {
+    // ventilation dans une arborescence à 3 niveaux
+    const subId = (idType === 'istex') ? docId : docId.substring(15);
+    const subFolders = path.join(subId[0], subId[1], subId[2]);
+
+    fs.mkdir(path.join(outputDir, subFolders), {recursive:true}, function (err) {
+      if (err) {
+        console.error("Error creating directory " + path.join(outputDir, subFolders));
+        callbackDlFn(err);
+      }
+      let docName = (idType === 'istex') ? docId : docId.substring(5).replace('/','_');
+      docName += '.'+formatType+'.' + format;
+      if (['mods','tei'].includes(format)) docName += ".xml";
+      const stream = fs.createWriteStream(path.join(outputDir, subFolders, docName));
+
+      //Contourner la redirection du /document/idIstex/metadata/json vers document/idIstex
+      //Car on a par ex: un fichier Json contenant : "Found. Redirecting to /document/idIstex"
+      if (format === 'json') {
+          formatUri = formatUri.replace('metadata/json','');
+      }
+      
+      let req = {};
+      if (program.jwt !== '') {
+        req = prepareHttpGetRequest(formatUri).set('Authorization', 'Bearer ' + program.jwt);
+      } else {
+        req = prepareHttpGetRequest(formatUri);
+      }
+      req.pipe(stream);
+      stream.on('finish', function () {
+        // console.log("progressIdx="+progressIdx+" format="+format);
+        if (progressIdx > progressBar.value) progressBar.update(progressIdx);
+        callbackDlFn(null);
+      });
+      stream.on('error', callbackDlFn);
+    });
+  });
+};
+
 
 if (fs.existsSync(outputDir)) {
   rl.question("Répertoire "+outputDir+" déjà existant. Essayez-vous de reprendre un téléchargement interrompu ? ", (answer) => {
