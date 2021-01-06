@@ -19,6 +19,7 @@ program
   .option('-o, --output [corpusFile path]', "fichier .corpus obtenu", ".corpus")
   .option('-c, --csv [coma-separated-columns]', "génère un fichier csv en plus du .corpus, en extrayant des infos du json selon [columns]")
   .option('-i, --idIstex', "récupère des idIstex au lieu d'identifiants ARK", false)
+  .option('-H, --host [host:port]', "interrogation sur un hostname (ou @IP) particulier", "")
   .option('-v, --verbose', "Affiche plus d'informations", false)
   .parse(process.argv);
 
@@ -26,7 +27,7 @@ const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
 });
-const prefixUrl = 'https://api.istex.fr';
+const prefixUrl = (program.host !== "") ? "http://" + program.host : "https://api.istex.fr";
 const scrollDuration = "1m";
 const pageSize = 1000;
 const progressBar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
@@ -62,7 +63,6 @@ let startJob = function() {
             let outputFields = csvColumns.map(col => {
                 return (col.indexOf('.') > 0) ? col.replace(/^(\w+)\..*$/,"$1") : col;
             });
-            console.log(outputFields.join(','));
             firstCallUrl = firstCallUrl.replace("output=id,arkIstex","output="+outputFields.join(','));
         }
     }
