@@ -58,7 +58,13 @@ let startJob = function() {
             encoding: 'utf8'    
         });
         csvColumns = program.csv.split(',');
-        firstCallUrl = firstCallUrl.replace("output=id,arkIstex","output=*");
+        if (program.csv) {
+            let outputFields = csvColumns.map(col => {
+                return (col.indexOf('.') > 0) ? col.replace(/^(\w+)\..*$/,"$1") : col;
+            });
+            console.log(outputFields.join(','));
+            firstCallUrl = firstCallUrl.replace("output=id,arkIstex","output="+outputFields.join(','));
+        }
     }
 
     let total = 0, idx = 0;
