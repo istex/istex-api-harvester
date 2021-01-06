@@ -10,13 +10,14 @@ const agent = request.agent();
 const jsonPackage = require('./package.json');
 const cliProgress = require('cli-progress');
 const readline = require('readline');
-// const { strict } = require('assert');
+var objectPath = require("object-path");
 
 program
   .version(jsonPackage.version)
   .option('-q, --query [requete]', "La requete (?q=) ", '*')
   .option('-j, --jwt [token]', "Le token à utiliser pour l'authentification", 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ')
   .option('-o, --output [corpusFile path]', "fichier .corpus obtenu", ".corpus")
+  .option('-c, --csv [coma-separated-columns]', "génère un fichier csv en plus du .corpus, en extrayant des infos du json selon [columns]")
   .option('-i, --idIstex', "récupère des idIstex au lieu d'identifiants ARK", false)
   .option('-v, --verbose', "Affiche plus d'informations", false)
   .parse(process.argv);
@@ -29,9 +30,11 @@ const prefixUrl = 'https://api.istex.fr';
 const scrollDuration = "1m";
 const pageSize = 1000;
 const progressBar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
-const firstCallUrl = prefixUrl + '/document/?q=' + program.query + '&output=id,arkIstex&scroll='+scrollDuration+'&size='+pageSize;
+let firstCallUrl = prefixUrl + '/document/?q=' + program.query + '&output=id,arkIstex&scroll='+scrollDuration+'&size='+pageSize;
 const dotCorpusPath = (program.output && program.output !== '') ? program.output : ".corpus";
 let scrollAgain = true;
+let csvOutputStream, csvColumns, csvString = '';
+
 let nextScrollURI = '';
 
 let outputStreamflag = 'a';
@@ -41,6 +44,22 @@ let startJob = function() {
         flags: outputStreamflag,
         encoding: 'utf8'
     });
+
+    if (program.csv) {
+        if (program.csv.indexOf('idIstex')>=0) {
+            program.csv = program.csv.replace("idIstex","id");
+        }
+        if (program.csv.indexOf('[')>=0) {
+            program.csv = program.csv.replace(/\[(\d+)\]/g,".$1");
+        }
+        const csvPath = (program.output && program.output !== '') ? program.output.replace(/\.corpus$/,'.csv') : '.corpus';
+        csvOutputStream = fs.createWriteStream(csvPath, {
+            flags: outputStreamflag,
+            encoding: 'utf8'    
+        });
+        csvColumns = program.csv.split(',');
+        firstCallUrl = firstCallUrl.replace("output=id,arkIstex","output=*");
+    }
 
     let total = 0, idx = 0;
     let stringBulk = '';
@@ -104,14 +123,33 @@ total        : ${res.body.total}
                     stringBulk += listArks.join("\n") + "\n";
                 }
 
+                if (program.csv) {
+                    csvString += res.body.hits.map(hit => {
+                        const values = [];
+                        for (const col of csvColumns) {
+                            const value = objectPath.get(hit,col);
+                            values.push((value) ? '"'+value+'"' : '""');
+                        }
+                        return values.join(',');
+                    }).join("\n");
+                }
+
                 outputStream.write(stringBulk, ()=>{
                     stringBulk = "";
-                    cbWhilst();
+                    if (program.csv) {
+                        csvOutputStream.write(csvString, ()=>{
+                            csvString = "";
+                            cbWhilst();
+                        });
+                    } else {
+                        cbWhilst();
+                    }
                 });
             
             });
         }, (err) => {
             outputStream.end();
+            if (program.csv) csvOutputStream.end();
             progressBar.stop();
             if (err) return console.error(err);
             if (program.verbose) console.log('Téléchargements terminés');
