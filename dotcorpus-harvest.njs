@@ -293,7 +293,7 @@ let harvestBulk = function(currentBulk,dotCorpusStream,cbHarvestBulk) {
     // launch download all the metadata & fulltext files
     async.series(downloadFunction, function (dlErr) {
       if (dlErr) console.error(dlErr);
-      fs.writeFile(cursorPath,Math.trunc(cursor / bulkSize -1) * bulkSize,{encoding:'utf8'}, (errWrite)=>{
+      fs.writeFile(cursorPath,Math.trunc(cursor / bulkSize) * bulkSize,{encoding:'utf8'}, (errWrite)=>{
         cbMapLimit(errWrite);
       });
     });
