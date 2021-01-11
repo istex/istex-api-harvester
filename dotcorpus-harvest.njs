@@ -350,6 +350,14 @@ let fillDownloadArray = function(downloadArray, docId, progressIdx, formatType, 
       } else {
         req = prepareHttpGetRequest(formatUri);
       }
+      req.on('response',(resp)=>{
+        if (resp.statusCode !== 200) {
+          console.error(resp.error.message);
+          return new Error(resp.error.message);
+        } else {
+          return resp;
+        }
+      });
       req.pipe(stream);
       stream.on('finish', function () {
         // console.log("progressIdx="+progressIdx+" format="+format);
