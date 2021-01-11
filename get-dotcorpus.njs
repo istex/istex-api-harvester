@@ -75,11 +75,12 @@ let startJob = function() {
         (cbWhilst) => {
 
             const url = (nextScrollURI !== '') ? nextScrollURI : firstCallUrl;
+            let extraParams = '&sid=istex-api-harvester';
             if (program.verbose) console.log(url);
 
             // to ignore bad https certificate
             process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-            agent.get(url)
+            agent.get(url+extraParams)
             .set('Authorization', 'Bearer ' + program.jwt)
             .end(function (err, res) {
                 if (err) {
@@ -143,7 +144,7 @@ total        : ${res.body.total}
                 outputStream.write(stringBulk, ()=>{
                     stringBulk = "";
                     if (program.csv) {
-                        csvOutputStream.write(csvString, ()=>{
+                        csvOutputStream.write(csvString+"\n", ()=>{
                             csvString = "";
                             cbWhilst();
                         });
