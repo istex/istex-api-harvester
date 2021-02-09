@@ -325,7 +325,7 @@ let fillDownloadArray = function(downloadArray, docId, progressIdx, formatType, 
   const arkSubRoute = (formatType === 'metadata') ? 'record' : 'fulltext';
   if (idType === 'ark') formatUri += '/'+docId+'/'+arkSubRoute+'.'+format;
   formatUri += '?sid=istex-api-harvester';
-  if (program.jwt !== && program.jwt !== 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
+  if (program.jwt !== '' && program.jwt !== 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
     formatUri += '&auth=jwt';
   }
 
