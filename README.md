@@ -1,8 +1,16 @@
 # istex-api-harvester
 
 Utilitaire en ligne de commande permettant de moissonner les corpus proposés par l'API de la plateforme ISTEX.
+
 En plus du présent moissonneur écrit en NodeJS, une [version expérimentale en BASH](https://github.com/istex/istex-api-harvester/tree/master/misc/bash) est disponible.
-La présente documentation concerne la version principale NodeJS.
+
+## 🚧 Important 🚧
+La présente version NodeJS peut poser des problèmes de fiabilité dans le cas de très grosses volumétries (>10000 documents par exemple). Certains documents pourraient ne pas être téléchargés bien que faisant partie des résultats.
+
+Pour cette raison, une nouvelle version **en 2 étapes** est en cours de développement. Bien que **tout à fait fonctionnelle**, elle n'est pas encore finalisée. Elle est disponible sur la branche [2-pass-harvesting](https://github.com/istex/istex-api-harvester/tree/2-pass-harvesting) du dépôt Github. **Nous vous invitons donc à utiliser de préférence cette version en 2 étapes.**
+
+# Documentation du moissonneur
+La présente documentation concerne la version obsolète en 1 étape.
 
 ![anim](https://cloud.githubusercontent.com/assets/328244/14159865/d012b4b6-f6d8-11e5-8dd2-7766896cd462.gif)
 
