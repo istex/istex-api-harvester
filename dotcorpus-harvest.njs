@@ -12,6 +12,14 @@ const jsonPackage = require('./package.json');
 const cliProgress = require('cli-progress');
 const readline = require('readline');
 
+var tabVer = process.versions.node.split('.');
+var major = Number.parseInt(tabVer[0]);
+var minor = Number.parseInt(tabVer[1]);
+if (major < 10 || (major===10 && minor<12)) {
+  console.error('La version 10.12 et supérieure de Node est requise.');
+  process.exit(1);
+}
+
 program
   .version(jsonPackage.version)
   .option('-d, --dotcorpus [dotcorpus path]', "Path du fichier dotcorpus", '.corpus')
@@ -317,7 +325,7 @@ let fillDownloadArray = function(downloadArray, docId, progressIdx, formatType, 
   const arkSubRoute = (formatType === 'metadata') ? 'record' : 'fulltext';
   if (idType === 'ark') formatUri += '/'+docId+'/'+arkSubRoute+'.'+format;
   formatUri += '?sid=istex-api-harvester';
-  if (program.jwt !== 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
+  if (program.jwt !== '' && program.jwt !== 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
     formatUri += '&auth=jwt';
   }
 
