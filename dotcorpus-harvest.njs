@@ -203,7 +203,7 @@ function checkIfAuthNeeded(program, cb) {
   prepareHttpGetRequest(url)
     .set('Authorization', 'Bearer ' + program.jwt)
     .end(function (err, res) {
-      if (res.statusCode === 302 && res.header.location.endsWith('api.istex.fr/auth')) {
+      if (res && res.statusCode === 302 && res.header.location.endsWith('api.istex.fr/auth')) {
         console.error("Vous avez demandé un format de fichier nécessitant authentification mais n'êtes pas authentifié.");
         console.error("Pour plus d'informations, ouvrez la page https://api.istex.fr/auth dans votre navigateur.");
         console.error("Pour vous authentifier par fédération d'identités, merci de renseigner un token JWT obtenu via https://api.istex.fr/token/");
