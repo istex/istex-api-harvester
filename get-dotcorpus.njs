@@ -167,7 +167,7 @@ total        : ${res.body.total}
 };
 
 if (fs.existsSync(dotCorpusPath)) {
-    rl.question('Fichier "+dotCorpusPath+" déjà existant. Voulez-vous l\'écraser ? ', (answer) => {
+    rl.question('Fichier "'+dotCorpusPath+'" déjà existant. Voulez-vous l\'écraser ? ', (answer) => {
         if (!['o','O','y','Y'].includes(answer)) {
             console.log('Vous souhaitez le conserver. Veuillez donc choisir un autre emplacement.');
             process.exit(1);
