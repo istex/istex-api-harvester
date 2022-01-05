@@ -79,7 +79,6 @@ let startJob = function() {
             if (program.verbose) console.log(url);
 
             // to ignore bad https certificate
-            process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
             agent.get(url+extraParams)
             .set('Authorization', 'Bearer ' + program.jwt)
             .end(function (err, res) {
