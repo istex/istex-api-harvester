@@ -29,6 +29,8 @@ Le rôle de chacune des 2 commandes est de :
 1) récupérer la liste des identifiants des documents correspondant à une équation de recherche ISTEX. En option, il est possible de récupérer des métadonnées simples dans un fichier CSV de sortie
 2) pour chacun des identifiants obtenus en `1.`, télécharger les formats de fichiers souhaités (par exemple `JSON`, `Mods` ou `TEI`)
 
+![commands-example](./resources/istex-harvester.gif)
+
 ## Pré requis
 
 Les prérequis pour l'utiliser sont :
