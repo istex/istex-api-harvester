@@ -176,7 +176,7 @@ let parseDotCorpus = function() {
 let harvestEnded = function() {
   progressBar.stop();
   console.info("moissonnage terminé.");
-  fs.writeFile(cursorPath,total,{encoding:'utf8'}, (err)=>{
+  fs.writeFile(cursorPath,''+total,{encoding:'utf8'}, (err)=>{
     if (err) console.error(err.message);
     process.exit(0);
   });
@@ -301,7 +301,7 @@ let harvestBulk = function(currentBulk,dotCorpusStream,cbHarvestBulk) {
     // launch download all the metadata & fulltext files
     async.series(downloadFunction, function (dlErr) {
       if (dlErr) console.error(dlErr);
-      fs.writeFile(cursorPath,Math.trunc(cursor / bulkSize) * bulkSize,{encoding:'utf8'}, (errWrite)=>{
+      fs.writeFile(cursorPath,''+Math.trunc(cursor / bulkSize) * bulkSize,{encoding:'utf8'}, (errWrite)=>{
         cbMapLimit(errWrite);
       });
     });
