@@ -50,7 +50,8 @@ program.fulltext = program.fulltext.split(',').filter(function (elt) {
   return elt !== '';
 });
 
-const cursorPath = path.join(outputDir,'.cursor');
+const cursorPath = path.join(outputDir, '.cursor');
+const errorLogPath = path.join(outputDir, 'errors.log');
 let cursor;
 
 
@@ -185,10 +186,21 @@ let harvestEnded = function() {
 // paramétrage de l'éventuel proxy http sortant
 // en passant par la variable d'environnement http_proxy
 require('superagent-proxy')(request);
+// require('superagent-retry-delay')(request);
 const httpProxy = process.env.http_proxy || '';
 function prepareHttpGetRequest(url) {
   const agent = request.agent();
-  return httpProxy ? agent.get(url).proxy(httpProxy).redirects(0) : agent.get(url).redirects(0);
+  if (httpProxy) {
+    return agent.get(url)
+      .retry(3,1000)
+      .proxy(httpProxy)
+      .redirects(0)
+
+  } else {
+    return agent.get(url)
+    .retry(3,1000)
+    .redirects(0);
+  }
 }
 
 /**
@@ -328,6 +340,7 @@ let fillDownloadArray = function(downloadArray, docId, progressIdx, formatType, 
   if (program.jwt !== '' && program.jwt !== 'cyIsImxhc3ROYW1lIjoiQk9ORE8iLCJ') {
     formatUri += '&auth=jwt';
   }
+  let docStatusCode = 200;
 
   // ajoute une opération de téléchargement
   // pour chaque métadonnée ou fulltext souhaité
@@ -344,7 +357,8 @@ let fillDownloadArray = function(downloadArray, docId, progressIdx, formatType, 
       let docName = (idType === 'istex') ? docId : docId.substring(5).replace('/','_');
       docName += '.'+formatType+'.' + format;
       if (['mods','tei'].includes(format)) docName += ".xml";
-      const stream = fs.createWriteStream(path.join(outputDir, subFolders, docName));
+      const docPath = path.join(outputDir, subFolders, docName);
+      const stream = fs.createWriteStream(docPath);
 
       //Contourner la redirection du /document/idIstex/metadata/json vers document/idIstex
       //Car on a par ex: un fichier Json contenant : "Found. Redirecting to /document/idIstex"
@@ -359,6 +373,7 @@ let fillDownloadArray = function(downloadArray, docId, progressIdx, formatType, 
         req = prepareHttpGetRequest(formatUri);
       }
       req.on('response',(resp)=>{
+        docStatusCode = resp.statusCode;
         if (resp.statusCode !== 200) {
           console.error(resp.error.message);
           return new Error(resp.error.message);
@@ -370,13 +385,20 @@ let fillDownloadArray = function(downloadArray, docId, progressIdx, formatType, 
       stream.on('finish', function () {
         // console.log("progressIdx="+progressIdx+" format="+format);
         if (progressIdx > progressBar.value) progressBar.update(progressIdx);
-        callbackDlFn(null);
+        if (docStatusCode !== 200) {
+          fs.unlink(docPath, (unlinkError) => {
+            fs.appendFile(errorLogPath, `Format ${formatType}/${format} not downloaded for ${docId}\n`, (appendError) => {
+              callbackDlFn(null);
+            });
+          });
+        } else {
+          callbackDlFn(null);
+        }
       });
       stream.on('error', callbackDlFn);
     });
   });
 };
-
 
 if (fs.existsSync(outputDir)) {
   rl.question("Répertoire "+outputDir+" déjà existant. Essayez-vous de reprendre un téléchargement interrompu ? ", (answer) => {
