@@ -23,7 +23,7 @@
   ],
   "license": "BSD",
   "dependencies": {
-    "async": "~0.2.9",
+    "async": "~2.6.4",
     "commander": "~2.9.0",
     "fs-extra": "^0.9.1",
     "mkdirp": "^0.5.5",
