@@ -42,7 +42,7 @@ fi
 mkdir -p $outputDir
 rm $outputDir/$corpusName/.cursor
 cd $outputDir
-exit 0
+
 tar cvzf $corpusName.tar.gz $corpusName/ > /dev/null
 rm -rf "$corpusName/"
 
