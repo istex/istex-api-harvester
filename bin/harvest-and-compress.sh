@@ -1,5 +1,6 @@
 #!/bin/bash
-
+# 
+# Moissonne les métadonnées d'un corpus pour fournir à Ex-libris
 # USAGE : ./harvest-and-compress.sh <corpusName> <outputDir>
 
 corpusName="$1"
@@ -7,7 +8,13 @@ outputDir="$2"
 isEbook="$3"
 
 harvesterDir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )/..
+grep -E "^$corpusName$" "$harvesterDir/resources/forbidden.txt"
+isForbidden=$?
 
+if [ $isForbidden -eq 0 ]; then
+    echo "🚨 Corpus interdit, licence interdisant le reversement dans une base tierce";
+    exit 1
+fi
 
 #$harvesterDir/get-dotcorpus.njs -i -q "corpusName.raw:duke" -o exlibris-export/duke.corpus -c doi,arkIstex,host.issn,host.eissn,fulltext[0].uri
 
@@ -19,15 +26,26 @@ fi
 
 #dotcorpus-harvest.njs -d exlibris-export/degruyter-journals.corpus -o exlibris-export/degruyter-journals -j $ISTEX_JWT -M mods -w 3
 
+modsDir=$outputDir/$corpusName
 $harvesterDir/dotcorpus-harvest.njs -d $outputDir/$corpusName.corpus -o $outputDir/$corpusName -j $ISTEX_JWT -M mods -w 3
+
+grep -E "^$corpusName$" "$harvesterDir/resources/no-abstract.txt"
+noAbstract=$?
+
+checksFilePath="$corpusName-checks.log"
+
+if [ $noAbstract -eq 0 ]; then
+    find "$modsDir" -type f -name "*.mods.xml" \
+    | parallel --gnu -j 8 -I {} $harvesterDir/bin/remove-mods-abstract.sh {} "$corpusName" >> $checksFilePath
+fi
 
 mkdir -p $outputDir
 rm $outputDir/$corpusName/.cursor
 cd $outputDir
+exit 0
 tar cvzf $corpusName.tar.gz $corpusName/ > /dev/null
 rm -rf "$corpusName/"
 
-checksFilePath="$corpusName-checks.log"
 
 echo -n "Nombre de lignes dans le fichier .corpus : " >> $checksFilePath
 grep 'id ' $corpusName.corpus | wc -l >> $checksFilePath

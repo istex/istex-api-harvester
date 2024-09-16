@@ -1,0 +1,8 @@
+springer-journals
+eebo
+ecco
+rsc-journals
+nature
+elsevier
+iop
+sage
