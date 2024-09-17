@@ -26,7 +26,7 @@ while IFS= read -r line; do
     # si besoin on retire les résumés (cf corpus concernés dans fichier resources/no-abstract.txt)
     # et surtout, on recopie dans le rép de destination (via redirection)
     grep -E "^$corpusName$" "$harvesterDir/resources/no-abstract.txt"
-    if [ $noAbstract -eq 0 ]; then
+    if [ $? -eq 0 ]; then
       xmlstarlet ed -P -N mods=http://www.loc.gov/mods/v3 -d '//mods:mods/mods:abstract' "$modsPathFrom" | xmllint --noblanks - > "$modsPathTo"
     else
       xmllint --noblanks "$modsPathFrom" > "$modsPathTo"
