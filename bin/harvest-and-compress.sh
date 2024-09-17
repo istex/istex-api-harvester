@@ -1,11 +1,13 @@
 #!/bin/bash
 # 
 # Moissonne les métadonnées d'un corpus pour fournir à Ex-libris
-# USAGE : ./harvest-and-compress.sh <corpusName> <outputDir>
+# USAGE : ./harvest-and-compress.sh <corpusName> <outputDir> <isEbook=true|false> <extraOption>
+# possible values for extraOption : --skip-dotcorpus
 
 corpusName="$1"
 outputDir="$2"
 isEbook="$3"
+extraOption="$4"
 
 harvesterDir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )/..
 grep -E "^$corpusName$" "$harvesterDir/resources/forbidden.txt"
@@ -18,10 +20,12 @@ fi
 
 #$harvesterDir/get-dotcorpus.njs -i -q "corpusName.raw:duke" -o exlibris-export/duke.corpus -c doi,arkIstex,host.issn,host.eissn,fulltext[0].uri
 
-if [ "$isEbook" = "true" ]; then 
-    $harvesterDir/get-dotcorpus.njs -i -q "corpusName.raw:$corpusName" -o $outputDir/$corpusName.corpus -c doi,arkIstex,host.isbn,host.eisbn,fulltext[0].uri
-else
-    $harvesterDir/get-dotcorpus.njs -i -q "corpusName.raw:$corpusName" -o $outputDir/$corpusName.corpus -c doi,arkIstex,host.issn,host.eissn,fulltext[0].uri
+if [ "$extraOption" != "--skip-dotcorpus" ]; then
+    if [ "$isEbook" = "true" ]; then 
+        $harvesterDir/get-dotcorpus.njs -i -q "corpusName.raw:$corpusName" -o $outputDir/$corpusName.corpus -c doi,arkIstex,host.isbn,host.eisbn,fulltext[0].uri
+    else
+        $harvesterDir/get-dotcorpus.njs -i -q "corpusName.raw:$corpusName" -o $outputDir/$corpusName.corpus -c doi,arkIstex,host.issn,host.eissn,fulltext[0].uri
+    fi
 fi
 
 #dotcorpus-harvest.njs -d exlibris-export/degruyter-journals.corpus -o exlibris-export/degruyter-journals -j $ISTEX_JWT -M mods -w 3
