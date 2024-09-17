@@ -22,7 +22,9 @@ while IFS= read -r line; do
     # on extrait l'idIstex
     idIstex=`echo $line | cut -d ' ' -f 2`
     modsPathFrom="$corpusOutput/${idIstex:0:1}/${idIstex:1:1}/${idIstex:2:1}/$idIstex/metadata/$idIstex.mods.xml"
-    modsPathTo="$modsDir/${idIstex:0:1}/${idIstex:1:1}/${idIstex:2:1}/$idIstex.metadata.mods.xml"
+    modsOutputDir="$modsDir/${idIstex:0:1}/${idIstex:1:1}/${idIstex:2:1}"
+    mkdir -p "$modsOutputDir"
+    modsPathTo="$modsOutputDir/$idIstex.metadata.mods.xml"
     # si besoin on retire les résumés (cf corpus concernés dans fichier resources/no-abstract.txt)
     # et surtout, on recopie dans le rép de destination (via redirection)
     grep -E "^$corpusName$" "$harvesterDir/resources/no-abstract.txt"
