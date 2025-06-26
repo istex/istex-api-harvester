@@ -186,19 +186,26 @@ let harvestEnded = function() {
 // paramétrage de l'éventuel proxy http sortant
 // en passant par la variable d'environnement http_proxy
 require('superagent-proxy')(request);
-// require('superagent-retry-delay')(request);
 const httpProxy = process.env.http_proxy || '';
+const retryCB = async function(err, res) {
+  let delay = 3000; // ms
+  if (err) {
+    console.log(`Request failed with error ${err?.message}, retrying in ${delay / 1000} seconds ...`);
+  }
+  await new Promise(resolve => setTimeout(() => resolve(), delay));
+    return true;
+};
 function prepareHttpGetRequest(url) {
   const agent = request.agent();
   if (httpProxy) {
     return agent.get(url)
-      .retry(3,1000)
+      .retry(3,retryCB)
       .proxy(httpProxy)
       .redirects(0)
 
   } else {
     return agent.get(url)
-    .retry(3,1000)
+    .retry(3, retryCB)
     .redirects(0);
   }
 }
