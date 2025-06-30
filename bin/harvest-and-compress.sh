@@ -9,7 +9,8 @@ outputDir="$2"
 isEbook="$3"
 extraOption="$4"
 
-harvesterDir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )/..
+binDir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+harvesterDir=$binDir/..
 grep -E "^$corpusName$" "$harvesterDir/resources/forbidden.txt"
 isForbidden=$?
 
@@ -31,7 +32,11 @@ fi
 #dotcorpus-harvest.njs -d exlibris-export/degruyter-journals.corpus -o exlibris-export/degruyter-journals -j $ISTEX_JWT -M mods -w 3
 
 modsDir=$outputDir/$corpusName
-$harvesterDir/dotcorpus-harvest.njs -d $outputDir/$corpusName.corpus -o $outputDir/$corpusName -j $ISTEX_JWT -M mods -w 3
+# $harvesterDir/dotcorpus-harvest.njs -d $outputDir/$corpusName.corpus -o $outputDir/$corpusName -j $ISTEX_JWT -M mods -w 3
+harvestModsScript="$binDir/harvest-mods.sh"
+echo "starting harvesting mods..."
+grep "^id"  $outputDir/$corpusName.corpus | cut -d ' ' -f 2 | parallel --gnu -j 3 -I {} $harvestModsScript {} $outputDir/$corpusName >> $outputDir/$corpusName-harvest-logs.txt 2>&1
+echo "harvesting mods ended."
 
 grep -E "^$corpusName$" "$harvesterDir/resources/no-abstract.txt"
 noAbstract=$?
@@ -40,7 +45,7 @@ checksFilePath="$corpusName-checks.log"
 
 if [ $noAbstract -eq 0 ]; then
     find "$modsDir" -type f -name "*.mods.xml" \
-    | parallel --gnu -j 8 -I {} $harvesterDir/bin/remove-mods-abstract.sh {} "$corpusName" >> $checksFilePath
+    | parallel --gnu -j 8 -I {} $binDir/remove-mods-abstract.sh {} "$corpusName" >> $checksFilePath
 fi
 
 mkdir -p $outputDir
